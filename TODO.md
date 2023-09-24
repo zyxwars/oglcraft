@@ -1,2 +1,3 @@
 - figure out vc for dependencies
 - c compatible math lib
+- running in visual studio
