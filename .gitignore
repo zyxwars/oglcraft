@@ -1,4 +1,5 @@
 build/
+out/
 dependencies/
 .vs/
 .vscode/

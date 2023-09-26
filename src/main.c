@@ -116,7 +116,9 @@ void GLAPIENTRY MessageCallback(GLenum source, GLenum type, GLuint id,
 struct Transform {
   vec3 translation;
   vec3 rotation;
-  vec3 scale;
+  vec3 forward;
+  vec3 right;
+  vec3 up;
 };
 
 struct Vertex {
@@ -158,9 +160,9 @@ int main(void) {
   CALL_GL(glDebugMessageCallback(MessageCallback, 0));
 
   int textureWidth, textureHeight, nrChannels;
-  unsigned char* textureData = stbi_load(
-      "C:/Users/Zyxwa/Documents/code/prototypes/oglc/src/assets/container.jpg",
-      &textureWidth, &textureHeight, &nrChannels, 0);
+  unsigned char* textureData =
+      stbi_load("C:/Users/Zyxwa/Documents/code/oglc/src/assets/container.jpg",
+                &textureWidth, &textureHeight, &nrChannels, 0);
   if (textureData == NULL) {
     LOG("Texture", "Couldn't load texture from file");
   }
@@ -218,9 +220,8 @@ int main(void) {
                GL_STATIC_DRAW);
 
   GLuint shaderProgram = CreateShaderProgram(
-      "C:/Users/Zyxwa/Documents/code/prototypes/oglc/src/shaders/shader.vert",
-      "C:/Users/Zyxwa/Documents/code/prototypes/oglc/src/shaders/"
-      "shader.frag");
+      "C:/Users/Zyxwa/Documents/code/oglc/src/shaders/shader.vert",
+      "C:/Users/Zyxwa/Documents/code/oglc/src/shaders/shader.frag");
   CALL_GL(glUseProgram(shaderProgram));
 
   CALL_GL(GLint MVPUniformLocation =
@@ -229,12 +230,34 @@ int main(void) {
   mat4 projection;
   glm_perspective(45.f, 640.f / 480.f, 1.f, 150.f, projection);
 
-  struct Transform cameraTransform = {
-      {0.f, 0.f, 0.f}, {0.f, 0.f, 0.f}, {1.f, 1.f, 1.f}};
+  struct Transform cameraTransform;
+  cameraTransform.translation[0] = 0.f;
+  cameraTransform.translation[1] = 0.f;
+  cameraTransform.translation[2] = 0.f;
+
+  cameraTransform.rotation[0] = -90.f;
+  cameraTransform.rotation[1] = 0.f;
+  cameraTransform.rotation[2] = 0.f;
+
+  cameraTransform.forward[0] = 0.f;
+  cameraTransform.forward[1] = 0.f;
+  cameraTransform.forward[2] = -1.f;
+
+  vec3 up = {0.f, 1.f, 0.f};
+
+  glm_vec3_cross(up, cameraTransform.forward, cameraTransform.right);
+  glm_vec3_normalize(cameraTransform.right);
+  glm_vec3_cross(cameraTransform.forward, cameraTransform.right,
+                 cameraTransform.up);
+
   float movementSpeed = 0.01f;
 
   struct Transform triangleTransform = {
       {0.f, 0.f, -2.f}, {0.f, 0.f, 0.f}, {1.f, 1.f, 1.f}};
+
+  int mouseHasMoved = 0;
+  double lastMouseX, lastMouseY;
+  float mouseSens = 0.01f;
 
   // Render loop
   while (!glfwWindowShouldClose(window)) {
@@ -242,27 +265,79 @@ int main(void) {
     int horizontalInput = 0;
 
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
-      verticalInput -= 1;
-    }
-    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
       verticalInput += 1;
     }
-    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
-      horizontalInput -= 1;
+    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
+      verticalInput -= 1;
     }
-    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
+    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
       horizontalInput += 1;
     }
+    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
+      horizontalInput -= 1;
+    }
 
-    cameraTransform.translation[0] += horizontalInput * movementSpeed;
-    cameraTransform.translation[2] += verticalInput * movementSpeed;
+    double mouseX, mouseY;
+    glfwGetCursorPos(window, &mouseX, &mouseY);
+
+    // camera rotation
+    if (mouseHasMoved) {
+      float relativeMouseX = mouseX - lastMouseX;
+      float relativeMouseY = mouseY - lastMouseY;
+
+      cameraTransform.rotation[0] += relativeMouseX * mouseSens;
+      cameraTransform.rotation[1] += -relativeMouseY * mouseSens;
+
+      // clamp y rotation
+      if (cameraTransform.rotation[1] > 89.9f) {
+        cameraTransform.rotation[1] = 89.9f;
+      } else if (cameraTransform.rotation[1] < -89.9f) {
+        cameraTransform.rotation[1] = -89.9f;
+      }
+
+      // TODO: visualize
+      cameraTransform.forward[0] = cos(glm_rad(cameraTransform.rotation[0])) *
+                                   cos(glm_rad(cameraTransform.rotation[1]));
+      cameraTransform.forward[1] = sin(glm_rad(cameraTransform.rotation[1]));
+      cameraTransform.forward[2] = sin(glm_rad(cameraTransform.rotation[0])) *
+                                   cos(glm_rad(cameraTransform.rotation[1]));
+
+      glm_vec3_normalize(cameraTransform.forward);
+
+      vec3 up = {0.f, 1.f, 0.f};
+
+      glm_vec3_cross(up, cameraTransform.forward, cameraTransform.right);
+      glm_vec3_normalize(cameraTransform.right);
+      glm_vec3_cross(cameraTransform.forward, cameraTransform.right,
+                     cameraTransform.up);
+    } else {
+      mouseHasMoved = 1;
+    }
+
+    lastMouseX = mouseX;
+    lastMouseY = mouseY;
+
+    vec3 zMovement;
+    glm_vec3_scale(cameraTransform.forward, movementSpeed * verticalInput,
+                   zMovement);
+    glm_vec3_add(cameraTransform.translation, zMovement,
+                 cameraTransform.translation);
+
+    vec3 xMovement;
+    glm_vec3_scale(cameraTransform.right, movementSpeed * horizontalInput,
+                   xMovement);
+    glm_vec3_add(cameraTransform.translation, xMovement,
+                 cameraTransform.translation);
 
     mat4 model = GLM_MAT4_IDENTITY_INIT;
     glm_translate(model, triangleTransform.translation);
 
-    mat4 view = GLM_MAT4_IDENTITY_INIT;
-    glm_translate(view, cameraTransform.translation);
-    glm_mat4_inv(view, view);
+    mat4 view;
+    vec3 cameraTarget;
+    glm_vec3_add(cameraTransform.translation, cameraTransform.forward,
+                 cameraTarget);
+    glm_lookat(cameraTransform.translation, cameraTarget, cameraTransform.up,
+               view);
 
     float mvp[4][4];
     glm_mat4_mulN((mat4*[]){&projection, &view, &model}, 3, mvp);
