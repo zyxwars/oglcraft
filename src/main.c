@@ -115,6 +115,11 @@ void GLAPIENTRY MessageCallback(GLenum source, GLenum type, GLuint id,
           message);
 }
 
+// TODO: remove hardcoded width and height
+float getTexelX(int x) { return (x + 0.5f) / 32.f; }
+
+float getTexelY(int y) { return (y + 0.5f) / 16.f; }
+
 struct Transform {
   vec3 translation;
   vec3 rotation;
@@ -127,7 +132,7 @@ struct Vertex {
   vec3 position;
   vec3 color;
   vec3 normal;
-  // vec2 texCoords;
+  vec2 texCoords;
 };
 
 int main(void) {
@@ -165,45 +170,117 @@ int main(void) {
   CALL_GL(glEnable(GL_CULL_FACE));
   CALL_GL(glEnable(GL_DEPTH_TEST));
 
-  // int textureWidth, textureHeight, nrChannels;
-  // unsigned char* textureData =
-  //     stbi_load("C:/Users/Zyxwa/Documents/code/oglc/src/assets/container.jpg",
-  //               &textureWidth, &textureHeight, &nrChannels, 0);
-  // if (textureData == NULL) {
-  //   LOG("Texture", "Couldn't load texture from file");
-  // }
+  int textureWidth, textureHeight, nrChannels;
+  unsigned char* textureData = stbi_load(
+      "C:/Users/Zyxwa/Documents/code/oglc/src/assets/texture_atlas.jpg",
+      &textureWidth, &textureHeight, &nrChannels, 0);
+  if (textureData == NULL) {
+    LOG("Texture", "Couldn't load texture from file");
+  }
 
   struct Vertex vertices[] = {
       // front
-      {{-0.5f, -0.5f, 0.5f}, {0.f, 1.f, 0.f}, {0.f, 0.f, 1.f}},
-      {{-0.5f, 0.5f, 0.5f}, {0.f, 1.f, 0.f}, {0.f, 0.f, 1.f}},
-      {{0.5f, 0.5f, 0.5f}, {0.f, 1.f, 0.f}, {0.f, 0.f, 1.f}},
-      {{0.5f, -0.5f, 0.5f}, {0.f, 1.f, 0.f}, {0.f, 0.f, 1.f}},
+      {{-0.5f, -0.5f, 0.5f},
+       {0.f, 1.f, 0.f},
+       {0.f, 0.f, 1.f},
+       {getTexelX(16), getTexelY(15)}},
+      {{-0.5f, 0.5f, 0.5f},
+       {0.f, 1.f, 0.f},
+       {0.f, 0.f, 1.f},
+       {getTexelX(16), getTexelY(0)}},
+      {{0.5f, 0.5f, 0.5f},
+       {0.f, 1.f, 0.f},
+       {0.f, 0.f, 1.f},
+       {getTexelX(31), getTexelY(0)}},
+      {{0.5f, -0.5f, 0.5f},
+       {0.f, 1.f, 0.f},
+       {0.f, 0.f, 1.f},
+       {getTexelX(31), getTexelY(15)}},
       // back
-      {{-0.5f, -0.5f, -0.5f}, {0.f, 1.f, 0.f}, {0.f, 0.f, -1.f}},
-      {{-0.5f, 0.5f, -0.5f}, {0.f, 1.f, 0.f}, {0.f, 0.f, -1.f}},
-      {{0.5f, 0.5f, -0.5f}, {0.f, 1.f, 0.f}, {0.f, 0.f, -1.f}},
-      {{0.5f, -0.5f, -0.5f}, {0.f, 1.f, 0.f}, {0.f, 0.f, -1.f}},
+      {{-0.5f, -0.5f, -0.5f},
+       {0.f, 1.f, 0.f},
+       {0.f, 0.f, -1.f},
+       {getTexelX(16), getTexelY(15)}},
+      {{-0.5f, 0.5f, -0.5f},
+       {0.f, 1.f, 0.f},
+       {0.f, 0.f, -1.f},
+       {getTexelX(16), getTexelY(0)}},
+      {{0.5f, 0.5f, -0.5f},
+       {0.f, 1.f, 0.f},
+       {0.f, 0.f, -1.f},
+       {getTexelX(31), getTexelY(0)}},
+      {{0.5f, -0.5f, -0.5f},
+       {0.f, 1.f, 0.f},
+       {0.f, 0.f, -1.f},
+       {getTexelX(31), getTexelY(15)}},
       // left
-      {{-0.5f, -0.5f, -0.5f}, {0.f, 1.f, 0.f}, {1.f, 0.f, 0.f}},
-      {{-0.5f, 0.5f, -0.5f}, {0.f, 1.f, 0.f}, {1.f, 0.f, 0.f}},
-      {{-0.5f, 0.5f, 0.5f}, {0.f, 1.f, 0.f}, {1.f, 0.f, 0.f}},
-      {{-0.5f, -0.5f, 0.5f}, {0.f, 1.f, 0.f}, {1.f, 0.f, 0.f}},
+      {{-0.5f, -0.5f, -0.5f},
+       {0.f, 1.f, 0.f},
+       {1.f, 0.f, 0.f},
+       {getTexelX(16), getTexelY(15)}},
+      {{-0.5f, 0.5f, -0.5f},
+       {0.f, 1.f, 0.f},
+       {1.f, 0.f, 0.f},
+       {getTexelX(16), getTexelY(0)}},
+      {{-0.5f, 0.5f, 0.5f},
+       {0.f, 1.f, 0.f},
+       {1.f, 0.f, 0.f},
+       {getTexelX(31), getTexelY(0)}},
+      {{-0.5f, -0.5f, 0.5f},
+       {0.f, 1.f, 0.f},
+       {1.f, 0.f, 0.f},
+       {getTexelX(31), getTexelY(15)}},
       // right
-      {{0.5f, -0.5f, -0.5f}, {0.f, 1.f, 0.f}, {-1.f, 0.f, 0.f}},
-      {{0.5f, 0.5f, -0.5f}, {0.f, 1.f, 0.f}, {-1.f, 0.f, 0.f}},
-      {{0.5f, 0.5f, 0.5f}, {0.f, 1.f, 0.f}, {-1.f, 0.f, 0.f}},
-      {{0.5f, -0.5f, 0.5f}, {0.f, 1.f, 0.f}, {-1.f, 0.f, 0.f}},
+      {{0.5f, -0.5f, -0.5f},
+       {0.f, 1.f, 0.f},
+       {-1.f, 0.f, 0.f},
+       {getTexelX(16), getTexelY(15)}},
+      {{0.5f, 0.5f, -0.5f},
+       {0.f, 1.f, 0.f},
+       {-1.f, 0.f, 0.f},
+       {getTexelX(16), getTexelY(0)}},
+      {{0.5f, 0.5f, 0.5f},
+       {0.f, 1.f, 0.f},
+       {-1.f, 0.f, 0.f},
+       {getTexelX(31), getTexelY(0)}},
+      {{0.5f, -0.5f, 0.5f},
+       {0.f, 1.f, 0.f},
+       {-1.f, 0.f, 0.f},
+       {getTexelX(31), getTexelY(15)}},
       // top
-      {{-0.5f, 0.5f, 0.5f}, {0.f, 1.f, 0.f}, {0.f, 1.f, 0.f}},
-      {{-0.5f, 0.5f, -0.5f}, {0.f, 1.f, 0.f}, {0.f, 1.f, 0.f}},
-      {{0.5f, 0.5f, -0.5f}, {0.f, 1.f, 0.f}, {0.f, 1.f, 0.f}},
-      {{0.5f, 0.5f, 0.5f}, {0.f, 1.f, 0.f}, {0.f, 1.f, 0.f}},
+      {{-0.5f, 0.5f, 0.5f},
+       {0.f, 1.f, 0.f},
+       {0.f, 1.f, 0.f},
+       {getTexelX(0), getTexelY(15)}},
+      {{-0.5f, 0.5f, -0.5f},
+       {0.f, 1.f, 0.f},
+       {0.f, 1.f, 0.f},
+       {getTexelX(0), getTexelY(0)}},
+      {{0.5f, 0.5f, -0.5f},
+       {0.f, 1.f, 0.f},
+       {0.f, 1.f, 0.f},
+       {getTexelX(15), getTexelY(0)}},
+      {{0.5f, 0.5f, 0.5f},
+       {0.f, 1.f, 0.f},
+       {0.f, 1.f, 0.f},
+       {getTexelX(15), getTexelY(15)}},
       // bottom
-      {{-0.5f, -0.5f, 0.5f}, {0.f, 1.f, 0.f}, {0.f, -1.f, 0.f}},
-      {{-0.5f, -0.5f, -0.5f}, {0.f, 1.f, 0.f}, {0.f, -1.f, 0.f}},
-      {{0.5f, -0.5f, -0.5f}, {0.f, 1.f, 0.f}, {0.f, -1.f, 0.f}},
-      {{0.5f, -0.5f, 0.5f}, {0.f, 1.f, 0.f}, {0.f, -1.f, 0.f}},
+      {{-0.5f, -0.5f, 0.5f},
+       {0.f, 1.f, 0.f},
+       {0.f, -1.f, 0.f},
+       {getTexelX(16), getTexelY(15)}},
+      {{-0.5f, -0.5f, -0.5f},
+       {0.f, 1.f, 0.f},
+       {0.f, -1.f, 0.f},
+       {getTexelX(16), getTexelY(0)}},
+      {{0.5f, -0.5f, -0.5f},
+       {0.f, 1.f, 0.f},
+       {0.f, -1.f, 0.f},
+       {getTexelX(31), getTexelY(0)}},
+      {{0.5f, -0.5f, 0.5f},
+       {0.f, 1.f, 0.f},
+       {0.f, -1.f, 0.f},
+       {getTexelX(31), getTexelY(15)}},
   };
   unsigned int triangles[] = {// front
                               0, 2, 1, 0, 3, 2,
@@ -222,23 +299,21 @@ int main(void) {
   CALL_GL(glGenVertexArrays(1, &vao));
   CALL_GL(glBindVertexArray(vao));
 
-  // GLuint texture;
-  // CALL_GL(glGenTextures(1, &texture));
-  // CALL_GL(glActiveTexture(GL_TEXTURE0));
-  // CALL_GL(glBindTexture(GL_TEXTURE_2D, texture));
+  GLuint texture;
+  CALL_GL(glGenTextures(1, &texture));
+  CALL_GL(glActiveTexture(GL_TEXTURE0));
+  CALL_GL(glBindTexture(GL_TEXTURE_2D, texture));
 
-  // CALL_GL(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT));
-  // CALL_GL(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT));
-  // CALL_GL(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
-  //                         GL_LINEAR_MIPMAP_LINEAR));
-  // CALL_GL(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
+  CALL_GL(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT));
+  CALL_GL(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT));
+  CALL_GL(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
+                          GL_LINEAR_MIPMAP_NEAREST));
+  CALL_GL(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST));
 
-  // CALL_GL(glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, textureWidth, textureHeight,
-  // 0,
-  //                      GL_RGB, GL_UNSIGNED_BYTE, textureData));
-  // CALL_GL(glGenerateMipmap(GL_TEXTURE_2D));
-  // stbi_image_free(textureData);
-  // CALL_GL(glBindTexture(GL_TEXTURE_2D, texture));
+  CALL_GL(glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, textureWidth, textureHeight, 0,
+                       GL_RGB, GL_UNSIGNED_BYTE, textureData));
+  CALL_GL(glGenerateMipmap(GL_TEXTURE_2D));
+  stbi_image_free(textureData);
 
   GLuint vbo;
   CALL_GL(glGenBuffers(1, &vbo));
@@ -259,6 +334,10 @@ int main(void) {
   CALL_GL(glEnableVertexAttribArray(2));
   CALL_GL(glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, stride,
                                 (void*)offsetof(struct Vertex, normal)));
+
+  CALL_GL(glEnableVertexAttribArray(3));
+  CALL_GL(glVertexAttribPointer(3, 2, GL_FLOAT, GL_FALSE, stride,
+                                (void*)offsetof(struct Vertex, texCoords)));
 
   GLuint ebo;
   CALL_GL(glGenBuffers(1, &ebo));

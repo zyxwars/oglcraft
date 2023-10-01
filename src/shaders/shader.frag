@@ -4,6 +4,9 @@ out vec4 FragColor;
 
 in vec4 out_color;
 in vec3 out_normal;
+in vec2 outTexCoords;
+
+uniform sampler2D texture1;
 
 float near = 0.1f; 
 float far  = 5.f;
@@ -28,6 +31,8 @@ void main(){
     vec3 ambient = lightColor * ambientStrength;
     vec3 diffuse = lightColor * max(dot(out_normal, lightDir), 0); 
 
-    vec3 color = out_color.xyz * (diffuse + ambient);
+    vec4 tex = texture(texture1, outTexCoords);
+
+    vec3 color = tex.xyz * (diffuse + ambient);
     FragColor = vec4(mix(color, fogColor, depth), 1);
 }
