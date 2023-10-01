@@ -12,6 +12,8 @@
 #include <cglm/mat4.h>
 #include <cglm/cam.h>
 #include <cglm/affine.h>
+#define FNL_IMPL
+#include <FastNoiseLite.h>
 
 #define LOG(label, msg) LOG_REMOTE(label, msg, __FILE__, __LINE__)
 
@@ -124,7 +126,8 @@ struct Transform {
 struct Vertex {
   vec3 position;
   vec3 color;
-  vec2 texCoords;
+  vec3 normal;
+  // vec2 texCoords;
 };
 
 int main(void) {
@@ -159,41 +162,83 @@ int main(void) {
   CALL_GL(glEnable(GL_DEBUG_OUTPUT));
   CALL_GL(glDebugMessageCallback(MessageCallback, 0));
 
-  int textureWidth, textureHeight, nrChannels;
-  unsigned char* textureData =
-      stbi_load("C:/Users/Zyxwa/Documents/code/oglc/src/assets/container.jpg",
-                &textureWidth, &textureHeight, &nrChannels, 0);
-  if (textureData == NULL) {
-    LOG("Texture", "Couldn't load texture from file");
-  }
+  CALL_GL(glEnable(GL_CULL_FACE));
+  CALL_GL(glEnable(GL_DEPTH_TEST));
+
+  // int textureWidth, textureHeight, nrChannels;
+  // unsigned char* textureData =
+  //     stbi_load("C:/Users/Zyxwa/Documents/code/oglc/src/assets/container.jpg",
+  //               &textureWidth, &textureHeight, &nrChannels, 0);
+  // if (textureData == NULL) {
+  //   LOG("Texture", "Couldn't load texture from file");
+  // }
 
   struct Vertex vertices[] = {
-      {{-0.5f, -0.5f, 0.0f}, {1.f, 0.f, 0.f}, {1.f, 1.f}},
-      {{0.f, 0.5f, 0.0f}, {0.f, 1.f, 0.f}, {0.5f, 0.f}},
-      {{0.5f, -0.5f, 0.0f}, {0.f, 0.f, 1.f}, {0.f, 1.f}}};
-
-  int triangles[] = {0, 1, 2};
+      // front
+      {{-0.5f, -0.5f, 0.5f}, {0.f, 1.f, 0.f}, {0.f, 0.f, 1.f}},
+      {{-0.5f, 0.5f, 0.5f}, {0.f, 1.f, 0.f}, {0.f, 0.f, 1.f}},
+      {{0.5f, 0.5f, 0.5f}, {0.f, 1.f, 0.f}, {0.f, 0.f, 1.f}},
+      {{0.5f, -0.5f, 0.5f}, {0.f, 1.f, 0.f}, {0.f, 0.f, 1.f}},
+      // back
+      {{-0.5f, -0.5f, -0.5f}, {0.f, 1.f, 0.f}, {0.f, 0.f, -1.f}},
+      {{-0.5f, 0.5f, -0.5f}, {0.f, 1.f, 0.f}, {0.f, 0.f, -1.f}},
+      {{0.5f, 0.5f, -0.5f}, {0.f, 1.f, 0.f}, {0.f, 0.f, -1.f}},
+      {{0.5f, -0.5f, -0.5f}, {0.f, 1.f, 0.f}, {0.f, 0.f, -1.f}},
+      // left
+      {{-0.5f, -0.5f, -0.5f}, {0.f, 1.f, 0.f}, {1.f, 0.f, 0.f}},
+      {{-0.5f, 0.5f, -0.5f}, {0.f, 1.f, 0.f}, {1.f, 0.f, 0.f}},
+      {{-0.5f, 0.5f, 0.5f}, {0.f, 1.f, 0.f}, {1.f, 0.f, 0.f}},
+      {{-0.5f, -0.5f, 0.5f}, {0.f, 1.f, 0.f}, {1.f, 0.f, 0.f}},
+      // right
+      {{0.5f, -0.5f, -0.5f}, {0.f, 1.f, 0.f}, {-1.f, 0.f, 0.f}},
+      {{0.5f, 0.5f, -0.5f}, {0.f, 1.f, 0.f}, {-1.f, 0.f, 0.f}},
+      {{0.5f, 0.5f, 0.5f}, {0.f, 1.f, 0.f}, {-1.f, 0.f, 0.f}},
+      {{0.5f, -0.5f, 0.5f}, {0.f, 1.f, 0.f}, {-1.f, 0.f, 0.f}},
+      // top
+      {{-0.5f, 0.5f, 0.5f}, {0.f, 1.f, 0.f}, {0.f, 1.f, 0.f}},
+      {{-0.5f, 0.5f, -0.5f}, {0.f, 1.f, 0.f}, {0.f, 1.f, 0.f}},
+      {{0.5f, 0.5f, -0.5f}, {0.f, 1.f, 0.f}, {0.f, 1.f, 0.f}},
+      {{0.5f, 0.5f, 0.5f}, {0.f, 1.f, 0.f}, {0.f, 1.f, 0.f}},
+      // bottom
+      {{-0.5f, -0.5f, 0.5f}, {0.f, 1.f, 0.f}, {0.f, -1.f, 0.f}},
+      {{-0.5f, -0.5f, -0.5f}, {0.f, 1.f, 0.f}, {0.f, -1.f, 0.f}},
+      {{0.5f, -0.5f, -0.5f}, {0.f, 1.f, 0.f}, {0.f, -1.f, 0.f}},
+      {{0.5f, -0.5f, 0.5f}, {0.f, 1.f, 0.f}, {0.f, -1.f, 0.f}},
+  };
+  unsigned int triangles[] = {// front
+                              0, 2, 1, 0, 3, 2,
+                              // back
+                              4, 5, 6, 4, 6, 7,
+                              // left
+                              8, 10, 9, 8, 11, 10,
+                              // right
+                              12, 13, 14, 12, 14, 15,
+                              // top
+                              16, 18, 17, 16, 19, 18,
+                              // bottom
+                              20, 21, 22, 20, 22, 23};
 
   GLuint vao;
   CALL_GL(glGenVertexArrays(1, &vao));
   CALL_GL(glBindVertexArray(vao));
 
-  GLuint texture;
-  CALL_GL(glGenTextures(1, &texture));
-  CALL_GL(glActiveTexture(GL_TEXTURE0));
-  CALL_GL(glBindTexture(GL_TEXTURE_2D, texture));
+  // GLuint texture;
+  // CALL_GL(glGenTextures(1, &texture));
+  // CALL_GL(glActiveTexture(GL_TEXTURE0));
+  // CALL_GL(glBindTexture(GL_TEXTURE_2D, texture));
 
-  CALL_GL(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT));
-  CALL_GL(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT));
-  CALL_GL(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
-                          GL_LINEAR_MIPMAP_LINEAR));
-  CALL_GL(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
+  // CALL_GL(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT));
+  // CALL_GL(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT));
+  // CALL_GL(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
+  //                         GL_LINEAR_MIPMAP_LINEAR));
+  // CALL_GL(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
 
-  CALL_GL(glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, textureWidth, textureHeight, 0,
-                       GL_RGB, GL_UNSIGNED_BYTE, textureData));
-  CALL_GL(glGenerateMipmap(GL_TEXTURE_2D));
-  stbi_image_free(textureData);
-  CALL_GL(glBindTexture(GL_TEXTURE_2D, texture));
+  // CALL_GL(glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, textureWidth, textureHeight,
+  // 0,
+  //                      GL_RGB, GL_UNSIGNED_BYTE, textureData));
+  // CALL_GL(glGenerateMipmap(GL_TEXTURE_2D));
+  // stbi_image_free(textureData);
+  // CALL_GL(glBindTexture(GL_TEXTURE_2D, texture));
 
   GLuint vbo;
   CALL_GL(glGenBuffers(1, &vbo));
@@ -201,17 +246,19 @@ int main(void) {
   CALL_GL(glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), &(vertices[0]),
                        GL_STATIC_DRAW));
 
-  CALL_GL(glEnableVertexAttribArray(0));
-  CALL_GL(glEnableVertexAttribArray(1));
-  CALL_GL(glEnableVertexAttribArray(2));
-
   int stride = sizeof(struct Vertex);
+
+  CALL_GL(glEnableVertexAttribArray(0));
   CALL_GL(glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, stride,
                                 (void*)offsetof(struct Vertex, position)));
+
+  CALL_GL(glEnableVertexAttribArray(1));
   CALL_GL(glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, stride,
                                 (void*)offsetof(struct Vertex, color)));
-  CALL_GL(glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, stride,
-                                (void*)offsetof(struct Vertex, texCoords)));
+
+  CALL_GL(glEnableVertexAttribArray(2));
+  CALL_GL(glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, stride,
+                                (void*)offsetof(struct Vertex, normal)));
 
   GLuint ebo;
   CALL_GL(glGenBuffers(1, &ebo));
@@ -228,11 +275,11 @@ int main(void) {
               glGetUniformLocation(shaderProgram, "u_MVP"));
 
   mat4 projection;
-  glm_perspective(45.f, 640.f / 480.f, 1.f, 150.f, projection);
+  glm_perspective(45.f, 640.f / 480.f, 1.f, 1000.f, projection);
 
   struct Transform cameraTransform;
   cameraTransform.translation[0] = 0.f;
-  cameraTransform.translation[1] = 0.f;
+  cameraTransform.translation[1] = 10.f;
   cameraTransform.translation[2] = 0.f;
 
   cameraTransform.rotation[0] = -90.f;
@@ -250,17 +297,28 @@ int main(void) {
   glm_vec3_cross(cameraTransform.forward, cameraTransform.right,
                  cameraTransform.up);
 
-  float movementSpeed = 0.01f;
-
-  struct Transform triangleTransform = {
-      {0.f, 0.f, -2.f}, {0.f, 0.f, 0.f}, {1.f, 1.f, 1.f}};
+  float movementSpeed = 7.5f;
+  float speedMultiplier = 0.f;
+  int lastVerticalInput = 0;
+  int lastHorizontalInput = 0;
 
   int mouseHasMoved = 0;
   double lastMouseX, lastMouseY;
   float mouseSens = 0.01f;
 
+  float deltaTimeS = 0.f;
+  float lastTimeS = 0.f;
+
+  // Create and configure noise state
+  fnl_state noise = fnlCreateState();
+  noise.noise_type = FNL_NOISE_OPENSIMPLEX2;
+
   // Render loop
   while (!glfwWindowShouldClose(window)) {
+    float currentTimeS = (float)glfwGetTime();
+    deltaTimeS = currentTimeS - lastTimeS;
+    lastTimeS = currentTimeS;
+
     int verticalInput = 0;
     int horizontalInput = 0;
 
@@ -318,19 +376,29 @@ int main(void) {
     lastMouseY = mouseY;
 
     vec3 zMovement;
-    glm_vec3_scale(cameraTransform.forward, movementSpeed * verticalInput,
+    glm_vec3_scale(cameraTransform.forward,
+                   movementSpeed * verticalInput * deltaTimeS * speedMultiplier,
                    zMovement);
     glm_vec3_add(cameraTransform.translation, zMovement,
                  cameraTransform.translation);
 
     vec3 xMovement;
-    glm_vec3_scale(cameraTransform.right, movementSpeed * horizontalInput,
-                   xMovement);
+    glm_vec3_scale(
+        cameraTransform.right,
+        movementSpeed * horizontalInput * deltaTimeS * speedMultiplier,
+        xMovement);
     glm_vec3_add(cameraTransform.translation, xMovement,
                  cameraTransform.translation);
 
-    mat4 model = GLM_MAT4_IDENTITY_INIT;
-    glm_translate(model, triangleTransform.translation);
+    if ((verticalInput == lastVerticalInput && verticalInput != 0) ||
+        (horizontalInput == lastHorizontalInput && horizontalInput != 0)) {
+      speedMultiplier += deltaTimeS;
+    } else {
+      speedMultiplier = 0;
+    }
+
+    lastVerticalInput = verticalInput;
+    lastHorizontalInput = horizontalInput;
 
     mat4 view;
     vec3 cameraTarget;
@@ -339,14 +407,57 @@ int main(void) {
     glm_lookat(cameraTransform.translation, cameraTarget, cameraTransform.up,
                view);
 
-    float mvp[4][4];
-    glm_mat4_mulN((mat4*[]){&projection, &view, &model}, 3, mvp);
+    mat4 mvp;
 
-    CALL_GL(glClear(GL_COLOR_BUFFER_BIT));
+    CALL_GL(glClearColor(0.8f, 0.9f, 1.f, 1.f));
+    CALL_GL(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
 
-    CALL_GL(glUniformMatrix4fv(MVPUniformLocation, 1, GL_FALSE, mvp[0]));
+    int chunkSize = 16;
+    int renderDistance = 8;
+    int renderDistanceSquared = pow(renderDistance, 2);
 
-    CALL_GL(glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_INT, 0));
+    int chunkPlayerX = floor(cameraTransform.translation[0] / chunkSize);
+    int chunkPlayerZ = floor(cameraTransform.translation[2] / chunkSize);
+
+    // printf("x:%.2f z:%.2f cx:%d cz:%d\n", cameraTransform.translation[0],
+    //        cameraTransform.translation[2], chunkPlayerX, chunkPlayerZ);
+
+    for (int chunkX = chunkPlayerX - renderDistance;
+         chunkX <= chunkPlayerX + renderDistance; chunkX++) {
+      for (int chunkZ = chunkPlayerZ - renderDistance;
+           chunkZ <= chunkPlayerZ + renderDistance; chunkZ++) {
+        // circular render distance
+        if (pow(chunkX - chunkPlayerX, 2) + pow(chunkZ - chunkPlayerZ, 2) >=
+            renderDistanceSquared) {
+          continue;
+        }
+
+        // render chunk
+        for (int x = 0; x < chunkSize; x++) {
+          for (int z = 0; z < chunkSize; z++) {
+            for (int y = 0; y < 1; y++) {
+              float worldX = chunkX * chunkSize + x;
+              float worldZ = chunkZ * chunkSize + z;
+              int height = floor(fnlGetNoise2D(&noise, worldX, worldZ) * 16);
+
+              mat4 model = GLM_MAT4_IDENTITY_INIT;
+              glm_translate(model, (vec3){worldX, height, worldZ});
+
+              // rendering
+              glm_mat4_mulN((mat4*[]){&projection, &view, &model}, 3, mvp);
+
+              CALL_GL(
+                  glUniformMatrix4fv(MVPUniformLocation, 1, GL_FALSE, mvp[0]));
+              CALL_GL(glDrawElements(GL_TRIANGLES, sizeof(triangles) / 3,
+                                     GL_UNSIGNED_INT, 0));
+            }
+          }
+        }
+      }
+    }
+
+    // CALL_GL(glUniformMatrix4fv(MVPUniformLocation, 1, GL_FALSE, mvp2[0]));
+    // CALL_GL(glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_INT, 0));
 
     glfwSwapBuffers(window);
 

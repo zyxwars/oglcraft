@@ -1,1 +1,4 @@
 - figure out vc for dependencies
+- hide inner faces
+- normalize diagonal speed
+- add fog
