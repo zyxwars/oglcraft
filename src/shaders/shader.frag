@@ -15,19 +15,19 @@ float LinearizeDepth(float depth)
 }
 
 void main(){
+    vec3 lightColor = vec3(1,1,0.8);
+
     vec3 fogColor = vec3(0.8,0.9,1);
     fogColor = fogColor * 1.f;
     float depth = LinearizeDepth(gl_FragCoord.z) / far;
     depth = pow(depth, 2);
 
-    vec3 lightDir = -1 * normalize(vec3(1,-1,0));
-    vec3 diffuseColor = vec3(1,1,1);
+    vec3 lightDir = -1 * normalize(vec3(1,-1,0.5));
     float ambientStrength = 0.2; 
-    vec3 ambientColor = vec3(1,1,1);
 
-    vec3 ambient = ambientColor * ambientStrength;
-    vec3 diffuse = diffuseColor * max(dot(out_normal, lightDir), 0.0);;
+    vec3 ambient = lightColor * ambientStrength;
+    vec3 diffuse = lightColor * max(dot(out_normal, lightDir), 0); 
 
-    vec3 color = out_color.xyz * ambient * diffuse;
+    vec3 color = out_color.xyz * (diffuse + ambient);
     FragColor = vec4(mix(color, fogColor, depth), 1);
 }

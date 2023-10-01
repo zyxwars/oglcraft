@@ -422,6 +422,17 @@ int main(void) {
     // printf("x:%.2f z:%.2f cx:%d cz:%d\n", cameraTransform.translation[0],
     //        cameraTransform.translation[2], chunkPlayerX, chunkPlayerZ);
 
+    // mat4 model = GLM_MAT4_IDENTITY_INIT;
+    // glm_translate(model, (vec3){0, 0, 0});
+
+    // // rendering
+    // glm_mat4_mulN((mat4*[]){&projection, &view, &model}, 3, mvp);
+
+    // CALL_GL(glUniformMatrix4fv(MVPUniformLocation, 1, GL_FALSE, mvp[0]));
+    // CALL_GL(glDrawElements(GL_TRIANGLES, sizeof(triangles) / 3,
+    // GL_UNSIGNED_INT,
+    //                        0));
+
     for (int chunkX = chunkPlayerX - renderDistance;
          chunkX <= chunkPlayerX + renderDistance; chunkX++) {
       for (int chunkZ = chunkPlayerZ - renderDistance;
@@ -455,10 +466,6 @@ int main(void) {
         }
       }
     }
-
-    // CALL_GL(glUniformMatrix4fv(MVPUniformLocation, 1, GL_FALSE, mvp2[0]));
-    // CALL_GL(glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_INT, 0));
-
     glfwSwapBuffers(window);
 
     glfwPollEvents();
