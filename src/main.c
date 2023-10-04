@@ -15,105 +15,8 @@
 #define FNL_IMPL
 #include <FastNoiseLite.h>
 
-#define LOG(label, msg) LOG_REMOTE(label, msg, __FILE__, __LINE__)
-
-#define LOG_REMOTE(label, msg, file, line) \
-  printf("[%s] %s in %s:%d\n", label, msg, file, line);
-
-#define CALL_GL(x) \
-  x;               \
-  LogGLError(__FILE__, __LINE__);
-
-static int LogGLError(const char* file, int line) {
-  GLenum e;
-  while (e = glGetError()) {
-    LOG_REMOTE("OpenGL Error", gluErrorString(e), file, line);
-    return 1;
-  }
-  return 0;
-}
-
-void FileToString(const char* path, char** buffer) {
-  FILE* f = fopen(path, "rb");
-  if (f == NULL) {
-    printf("File not found %s\n", path);
-    return;
-  }
-
-  fseek(f, 0, SEEK_END);
-  // TODO: this isn't recommended and reads in a few extra garbage bytes
-  int length = ftell(f);
-  fseek(f, 0, SEEK_SET);
-
-  *buffer = malloc(sizeof(char) * length + 1);
-  fread(*buffer, sizeof(char), length, f);
-  *(*buffer + length) = '\0';
-
-  fclose(f);
-}
-
-int CompileShader(GLenum type, const char* shaderSource) {
-  GLuint id = CALL_GL(glCreateShader(type));
-  CALL_GL(glShaderSource(id, 1, &shaderSource, NULL));
-  CALL_GL(glCompileShader(id));
-
-  int success;
-  char infoLog[512];
-  CALL_GL(glGetShaderiv(id, GL_COMPILE_STATUS, &success));
-
-  if (!success) {
-    CALL_GL(glGetShaderInfoLog(id, 512, NULL, infoLog));
-    printf("%s\n", shaderSource);
-    printf("%s shader compile error: %s\n",
-           type == GL_VERTEX_SHADER ? "Vertex" : "Fragment", infoLog);
-    return 0;
-  }
-
-  return id;
-}
-
-int CreateShaderProgram(const char* vertexSourcePath,
-                        const char* fragmentSourcePath) {
-  char* vertexSource = NULL;
-  FileToString(vertexSourcePath, &vertexSource);
-  GLuint vertexShader = CompileShader(GL_VERTEX_SHADER, vertexSource);
-  free(vertexSource);
-
-  char* fragmentSource = NULL;
-  FileToString(fragmentSourcePath, &fragmentSource);
-  GLuint fragmentShader = CompileShader(GL_FRAGMENT_SHADER, fragmentSource);
-  free(fragmentSource);
-
-  GLuint id = CALL_GL(glCreateProgram());
-
-  CALL_GL(glAttachShader(id, vertexShader));
-  CALL_GL(glAttachShader(id, fragmentShader));
-
-  CALL_GL(glLinkProgram(id));
-
-  CALL_GL(glDeleteShader(vertexShader));
-  CALL_GL(glDeleteShader(fragmentShader));
-
-  int success;
-  char infoLog[512];
-  CALL_GL(glGetProgramiv(id, GL_LINK_STATUS, &success));
-  if (!success) {
-    CALL_GL(glGetProgramInfoLog(id, 512, NULL, infoLog));
-    printf("Shader program error: %s\n", infoLog);
-  }
-
-  return id;
-}
-
-// TODO: support gl under 4.3
-void GLAPIENTRY MessageCallback(GLenum source, GLenum type, GLuint id,
-                                GLenum severity, GLsizei length,
-                                const GLchar* message, const void* userParam) {
-  fprintf(stderr,
-          "GL CALLBACK: %s type = 0x%x, severity = 0x%x, message = %s\n",
-          (type == GL_DEBUG_TYPE_ERROR ? "** GL ERROR **" : ""), type, severity,
-          message);
-}
+#include "Shader.h"
+#include "GlWrapper.h"
 
 // TODO: remove hardcoded width and height
 float getTexelX(int x) { return (x + 0.5f) / 32.f; }
@@ -162,10 +65,6 @@ int main(void) {
 
   // Init gl
   printf("Status: Using GL %s\n", glGetString(GL_VERSION));
-
-  // TODO: Check gl version over 4.3
-  CALL_GL(glEnable(GL_DEBUG_OUTPUT));
-  CALL_GL(glDebugMessageCallback(MessageCallback, 0));
 
   CALL_GL(glEnable(GL_CULL_FACE));
   CALL_GL(glEnable(GL_DEPTH_TEST));
