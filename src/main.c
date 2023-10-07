@@ -38,6 +38,150 @@ struct Vertex {
   vec2 texCoords;
 };
 
+void MakeFace(int x, int y, int z, struct Vertex* face) {
+  const struct Vertex frontFace[] = {
+      {-0.5f, -0.5f, 0.5f},
+      {0.f, 1.f, 0.f},
+      {0.f, 0.f, 1.f},
+      {getTexelX(16), getTexelY(15)},
+      {{-0.5f, 0.5f, 0.5f},
+       {0.f, 1.f, 0.f},
+       {0.f, 0.f, 1.f},
+       {getTexelX(16), getTexelY(0)}},
+      {{0.5f, 0.5f, 0.5f},
+       {0.f, 1.f, 0.f},
+       {0.f, 0.f, 1.f},
+       {getTexelX(31), getTexelY(0)}},
+      {{0.5f, -0.5f, 0.5f},
+       {0.f, 1.f, 0.f},
+       {0.f, 0.f, 1.f},
+       {getTexelX(31), getTexelY(15)}},
+  };
+  const struct Vertex backFace[] = {
+      {{-0.5f, -0.5f, -0.5f},
+       {0.f, 1.f, 0.f},
+       {0.f, 0.f, -1.f},
+       {getTexelX(16), getTexelY(15)}},
+      {{-0.5f, 0.5f, -0.5f},
+       {0.f, 1.f, 0.f},
+       {0.f, 0.f, -1.f},
+       {getTexelX(16), getTexelY(0)}},
+      {{0.5f, 0.5f, -0.5f},
+       {0.f, 1.f, 0.f},
+       {0.f, 0.f, -1.f},
+       {getTexelX(31), getTexelY(0)}},
+      {{0.5f, -0.5f, -0.5f},
+       {0.f, 1.f, 0.f},
+       {0.f, 0.f, -1.f},
+       {getTexelX(31), getTexelY(15)}},
+  };
+  const struct Vertex topFace[] = {
+      {{-0.5f, 0.5f, 0.5f},
+       {0.f, 1.f, 0.f},
+       {0.f, 1.f, 0.f},
+       {getTexelX(0), getTexelY(15)}},
+      {{-0.5f, 0.5f, -0.5f},
+       {0.f, 1.f, 0.f},
+       {0.f, 1.f, 0.f},
+       {getTexelX(0), getTexelY(0)}},
+      {{0.5f, 0.5f, -0.5f},
+       {0.f, 1.f, 0.f},
+       {0.f, 1.f, 0.f},
+       {getTexelX(15), getTexelY(0)}},
+      {{0.5f, 0.5f, 0.5f},
+       {0.f, 1.f, 0.f},
+       {0.f, 1.f, 0.f},
+       {getTexelX(15), getTexelY(15)}},
+
+  };
+  const struct Vertex bottomFace[] = {
+      {{-0.5f, -0.5f, 0.5f},
+       {0.f, 1.f, 0.f},
+       {0.f, -1.f, 0.f},
+       {getTexelX(16), getTexelY(15)}},
+      {{-0.5f, -0.5f, -0.5f},
+       {0.f, 1.f, 0.f},
+       {0.f, -1.f, 0.f},
+       {getTexelX(16), getTexelY(0)}},
+      {{0.5f, -0.5f, -0.5f},
+       {0.f, 1.f, 0.f},
+       {0.f, -1.f, 0.f},
+       {getTexelX(31), getTexelY(0)}},
+      {{0.5f, -0.5f, 0.5f},
+       {0.f, 1.f, 0.f},
+       {0.f, -1.f, 0.f},
+       {getTexelX(31), getTexelY(15)}},
+  };
+  const struct Vertex leftFace[] = {
+      {{-0.5f, -0.5f, -0.5f},
+       {0.f, 1.f, 0.f},
+       {1.f, 0.f, 0.f},
+       {getTexelX(16), getTexelY(15)}},
+      {{-0.5f, 0.5f, -0.5f},
+       {0.f, 1.f, 0.f},
+       {1.f, 0.f, 0.f},
+       {getTexelX(16), getTexelY(0)}},
+      {{-0.5f, 0.5f, 0.5f},
+       {0.f, 1.f, 0.f},
+       {1.f, 0.f, 0.f},
+       {getTexelX(31), getTexelY(0)}},
+      {{-0.5f, -0.5f, 0.5f},
+       {0.f, 1.f, 0.f},
+       {1.f, 0.f, 0.f},
+       {getTexelX(31), getTexelY(15)}},
+  };
+  const struct Vertex rightFace[] = {
+      {{0.5f, -0.5f, -0.5f},
+       {0.f, 1.f, 0.f},
+       {-1.f, 0.f, 0.f},
+       {getTexelX(16), getTexelY(15)}},
+      {{0.5f, 0.5f, -0.5f},
+       {0.f, 1.f, 0.f},
+       {-1.f, 0.f, 0.f},
+       {getTexelX(16), getTexelY(0)}},
+      {{0.5f, 0.5f, 0.5f},
+       {0.f, 1.f, 0.f},
+       {-1.f, 0.f, 0.f},
+       {getTexelX(31), getTexelY(0)}},
+      {{0.5f, -0.5f, 0.5f},
+       {0.f, 1.f, 0.f},
+       {-1.f, 0.f, 0.f},
+       {getTexelX(31), getTexelY(15)}},
+  };
+
+  // TODO: choose which face
+
+  // Add all vertices belonging to a face
+  for (int i = 0; i < 4; i++) {
+    memcpy(&face[i], &topFace[i], sizeof(topFace[i]));
+
+    // TODO: multiply by chunk as well
+    face[i].position[0] += x;
+    face[i].position[1] += y;
+    face[i].position[2] += z;
+  }
+}
+
+void MakeCube(int x, int y, int z, int* currentFaceIndex,
+              struct Vertex* vertices, unsigned int *triangles) {
+  // TODO: create visible faces
+
+  // Face = 4 vertices;
+  int currentVertexIndex = (*currentFaceIndex) * 4;
+  // and 6 triangle indices
+  int currentTriangleIndex = (*currentFaceIndex) * 6;
+  MakeFace(x, y, z, vertices + currentVertexIndex);
+
+  triangles[currentTriangleIndex] = 0 + currentVertexIndex;
+  triangles[currentTriangleIndex+1] = 2 + currentVertexIndex;
+  triangles[currentTriangleIndex+2] = 1 + currentVertexIndex;
+  triangles[currentTriangleIndex+3] = 0 + currentVertexIndex;
+  triangles[currentTriangleIndex+4] = 3 + currentVertexIndex;
+  triangles[currentTriangleIndex+5] = 2 + currentVertexIndex;
+
+  (*currentFaceIndex)++;
+}
+
 int main(void) {
   // Init glfw
   GLFWwindow* window;
@@ -66,7 +210,8 @@ int main(void) {
   // Init gl
   printf("Status: Using GL %s\n", glGetString(GL_VERSION));
 
-  CALL_GL(glEnable(GL_CULL_FACE));
+  // TODO:
+  //CALL_GL(glEnable(GL_CULL_FACE));
   CALL_GL(glEnable(GL_DEPTH_TEST));
 
   int textureWidth, textureHeight, nrChannels;
@@ -76,123 +221,6 @@ int main(void) {
   if (textureData == NULL) {
     LOG("Texture", "Couldn't load texture from file");
   }
-
-  struct Vertex vertices[] = {
-      // front
-      {{-0.5f, -0.5f, 0.5f},
-       {0.f, 1.f, 0.f},
-       {0.f, 0.f, 1.f},
-       {getTexelX(16), getTexelY(15)}},
-      {{-0.5f, 0.5f, 0.5f},
-       {0.f, 1.f, 0.f},
-       {0.f, 0.f, 1.f},
-       {getTexelX(16), getTexelY(0)}},
-      {{0.5f, 0.5f, 0.5f},
-       {0.f, 1.f, 0.f},
-       {0.f, 0.f, 1.f},
-       {getTexelX(31), getTexelY(0)}},
-      {{0.5f, -0.5f, 0.5f},
-       {0.f, 1.f, 0.f},
-       {0.f, 0.f, 1.f},
-       {getTexelX(31), getTexelY(15)}},
-      // back
-      {{-0.5f, -0.5f, -0.5f},
-       {0.f, 1.f, 0.f},
-       {0.f, 0.f, -1.f},
-       {getTexelX(16), getTexelY(15)}},
-      {{-0.5f, 0.5f, -0.5f},
-       {0.f, 1.f, 0.f},
-       {0.f, 0.f, -1.f},
-       {getTexelX(16), getTexelY(0)}},
-      {{0.5f, 0.5f, -0.5f},
-       {0.f, 1.f, 0.f},
-       {0.f, 0.f, -1.f},
-       {getTexelX(31), getTexelY(0)}},
-      {{0.5f, -0.5f, -0.5f},
-       {0.f, 1.f, 0.f},
-       {0.f, 0.f, -1.f},
-       {getTexelX(31), getTexelY(15)}},
-      // left
-      {{-0.5f, -0.5f, -0.5f},
-       {0.f, 1.f, 0.f},
-       {1.f, 0.f, 0.f},
-       {getTexelX(16), getTexelY(15)}},
-      {{-0.5f, 0.5f, -0.5f},
-       {0.f, 1.f, 0.f},
-       {1.f, 0.f, 0.f},
-       {getTexelX(16), getTexelY(0)}},
-      {{-0.5f, 0.5f, 0.5f},
-       {0.f, 1.f, 0.f},
-       {1.f, 0.f, 0.f},
-       {getTexelX(31), getTexelY(0)}},
-      {{-0.5f, -0.5f, 0.5f},
-       {0.f, 1.f, 0.f},
-       {1.f, 0.f, 0.f},
-       {getTexelX(31), getTexelY(15)}},
-      // right
-      {{0.5f, -0.5f, -0.5f},
-       {0.f, 1.f, 0.f},
-       {-1.f, 0.f, 0.f},
-       {getTexelX(16), getTexelY(15)}},
-      {{0.5f, 0.5f, -0.5f},
-       {0.f, 1.f, 0.f},
-       {-1.f, 0.f, 0.f},
-       {getTexelX(16), getTexelY(0)}},
-      {{0.5f, 0.5f, 0.5f},
-       {0.f, 1.f, 0.f},
-       {-1.f, 0.f, 0.f},
-       {getTexelX(31), getTexelY(0)}},
-      {{0.5f, -0.5f, 0.5f},
-       {0.f, 1.f, 0.f},
-       {-1.f, 0.f, 0.f},
-       {getTexelX(31), getTexelY(15)}},
-      // top
-      {{-0.5f, 0.5f, 0.5f},
-       {0.f, 1.f, 0.f},
-       {0.f, 1.f, 0.f},
-       {getTexelX(0), getTexelY(15)}},
-      {{-0.5f, 0.5f, -0.5f},
-       {0.f, 1.f, 0.f},
-       {0.f, 1.f, 0.f},
-       {getTexelX(0), getTexelY(0)}},
-      {{0.5f, 0.5f, -0.5f},
-       {0.f, 1.f, 0.f},
-       {0.f, 1.f, 0.f},
-       {getTexelX(15), getTexelY(0)}},
-      {{0.5f, 0.5f, 0.5f},
-       {0.f, 1.f, 0.f},
-       {0.f, 1.f, 0.f},
-       {getTexelX(15), getTexelY(15)}},
-      // bottom
-      {{-0.5f, -0.5f, 0.5f},
-       {0.f, 1.f, 0.f},
-       {0.f, -1.f, 0.f},
-       {getTexelX(16), getTexelY(15)}},
-      {{-0.5f, -0.5f, -0.5f},
-       {0.f, 1.f, 0.f},
-       {0.f, -1.f, 0.f},
-       {getTexelX(16), getTexelY(0)}},
-      {{0.5f, -0.5f, -0.5f},
-       {0.f, 1.f, 0.f},
-       {0.f, -1.f, 0.f},
-       {getTexelX(31), getTexelY(0)}},
-      {{0.5f, -0.5f, 0.5f},
-       {0.f, 1.f, 0.f},
-       {0.f, -1.f, 0.f},
-       {getTexelX(31), getTexelY(15)}},
-  };
-  unsigned int triangles[] = {// front
-                              0, 2, 1, 0, 3, 2,
-                              // back
-                              4, 5, 6, 4, 6, 7,
-                              // left
-                              8, 10, 9, 8, 11, 10,
-                              // right
-                              12, 13, 14, 12, 14, 15,
-                              // top
-                              16, 18, 17, 16, 19, 18,
-                              // bottom
-                              20, 21, 22, 20, 22, 23};
 
   GLuint vao;
   CALL_GL(glGenVertexArrays(1, &vao));
@@ -217,8 +245,6 @@ int main(void) {
   GLuint vbo;
   CALL_GL(glGenBuffers(1, &vbo));
   CALL_GL(glBindBuffer(GL_ARRAY_BUFFER, vbo));
-  CALL_GL(glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), &(vertices[0]),
-                       GL_STATIC_DRAW));
 
   int stride = sizeof(struct Vertex);
 
@@ -241,8 +267,6 @@ int main(void) {
   GLuint ebo;
   CALL_GL(glGenBuffers(1, &ebo));
   CALL_GL(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo));
-  glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(triangles), triangles,
-               GL_STATIC_DRAW);
 
   GLuint shaderProgram = CreateShaderProgram(
       "C:/Users/Zyxwa/Documents/code/oglc/src/shaders/shader.vert",
@@ -390,60 +414,41 @@ int main(void) {
     CALL_GL(glClearColor(0.8f, 0.9f, 1.f, 1.f));
     CALL_GL(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
 
-    int chunkSize = 16;
-    int renderDistance = 8;
-    int renderDistanceSquared = pow(renderDistance, 2);
+    // generate chunk mesh
+    const int chunkSize = 16;
+    const int maxFaces = (pow(chunkSize, 3) * 6);
 
-    int chunkPlayerX = floor(cameraTransform.translation[0] / chunkSize);
-    int chunkPlayerZ = floor(cameraTransform.translation[2] / chunkSize);
+    // TODO: allocate in a less wasteful way?
+    struct Vertex* vertices = malloc(maxFaces * 4 * sizeof(struct Vertex));
+    unsigned int* triangles = malloc(maxFaces * 6 * sizeof(unsigned int));
 
-    // printf("x:%.2f z:%.2f cx:%d cz:%d\n", cameraTransform.translation[0],
-    //        cameraTransform.translation[2], chunkPlayerX, chunkPlayerZ);
-
-    // mat4 model = GLM_MAT4_IDENTITY_INIT;
-    // glm_translate(model, (vec3){0, 0, 0});
-
-    // // rendering
-    // glm_mat4_mulN((mat4*[]){&projection, &view, &model}, 3, mvp);
-
-    // CALL_GL(glUniformMatrix4fv(MVPUniformLocation, 1, GL_FALSE, mvp[0]));
-    // CALL_GL(glDrawElements(GL_TRIANGLES, sizeof(triangles) / 3,
-    // GL_UNSIGNED_INT,
-    //                        0));
-
-    for (int chunkX = chunkPlayerX - renderDistance;
-         chunkX <= chunkPlayerX + renderDistance; chunkX++) {
-      for (int chunkZ = chunkPlayerZ - renderDistance;
-           chunkZ <= chunkPlayerZ + renderDistance; chunkZ++) {
-        // circular render distance
-        if (pow(chunkX - chunkPlayerX, 2) + pow(chunkZ - chunkPlayerZ, 2) >=
-            renderDistanceSquared) {
-          continue;
-        }
-
-        // render chunk
-        for (int x = 0; x < chunkSize; x++) {
-          for (int z = 0; z < chunkSize; z++) {
-            for (int y = 0; y < 1; y++) {
-              float worldX = chunkX * chunkSize + x;
-              float worldZ = chunkZ * chunkSize + z;
-              int height = floor(fnlGetNoise2D(&noise, worldX, worldZ) * 16);
-
-              mat4 model = GLM_MAT4_IDENTITY_INIT;
-              glm_translate(model, (vec3){worldX, height, worldZ});
-
-              // rendering
-              glm_mat4_mulN((mat4*[]){&projection, &view, &model}, 3, mvp);
-
-              CALL_GL(
-                  glUniformMatrix4fv(MVPUniformLocation, 1, GL_FALSE, mvp[0]));
-              CALL_GL(glDrawElements(GL_TRIANGLES, sizeof(triangles) / 3,
-                                     GL_UNSIGNED_INT, 0));
-            }
-          }
-        }
+    int currentFaceIndex = 0;
+    for (int x = 0; x < chunkSize; x++) {
+      for (int y = 0; y < chunkSize; y++) {
+		  for (int z = 0; z < chunkSize; z++) {
+			MakeCube(x, y, z, &currentFaceIndex, vertices, triangles);
+		  }
       }
     }
+
+    // We copy only the existing vertices based on face index, not the size of the vertices array
+    CALL_GL(glBufferData(GL_ARRAY_BUFFER, sizeof(struct Vertex) * 4 * currentFaceIndex, vertices,
+                         GL_STATIC_DRAW));
+    free(vertices);
+
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned int) * 6 * currentFaceIndex, triangles,
+                 GL_STATIC_DRAW);
+    free(triangles);
+
+    // position chunk
+    mat4 model = GLM_MAT4_IDENTITY_INIT;
+    glm_translate(model, (vec3){0, 0, 0});
+    glm_mat4_mulN((mat4*[]){&projection, &view, &model}, 3, mvp);
+
+    // draw chunk
+    CALL_GL(glUniformMatrix4fv(MVPUniformLocation, 1, GL_FALSE, mvp[0]));
+    CALL_GL(glDrawElements(GL_TRIANGLES, currentFaceIndex * 6,
+                           GL_UNSIGNED_INT, 0));
     glfwSwapBuffers(window);
 
     glfwPollEvents();
