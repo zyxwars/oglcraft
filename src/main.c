@@ -1,27 +1,45 @@
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <math.h>
 
 #define GLEW_STATIC
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #define STB_IMAGE_IMPLEMENTATION
-#include <stb_image.h>
+#include <cglm/affine.h>
+#include <cglm/cam.h>
+#include <cglm/mat4.h>
 #include <cglm/vec2.h>
 #include <cglm/vec3.h>
-#include <cglm/mat4.h>
-#include <cglm/cam.h>
-#include <cglm/affine.h>
+#include <stb_image.h>
 #define FNL_IMPL
 #include <FastNoiseLite.h>
 
-#include "Shader.h"
 #include "GlWrapper.h"
+#include "Shader.h"
 
 // TODO: remove hardcoded width and height
-float getTexelX(int x) { return (x + 0.5f) / 32.f; }
+// Get center of texel to avoid bleeding
+#define GET_TEXEL_X(x) ((x + 0.5f) / 32.f)
 
-float getTexelY(int y) { return (y + 0.5f) / 16.f; }
+#define GET_TEXEL_Y(y) ((y + 0.5f) / 16.f)
+
+#define CHUNK_LENGTH 16
+// how many blocks fit in 1 tall chunk
+#define CHUNK_PLANE_AREA CHUNK_LENGTH* CHUNK_LENGTH
+
+int PosToIndex(int x, int y, int z) {
+  return x + z * CHUNK_LENGTH + y * CHUNK_PLANE_AREA;
+}
+
+enum BlockFace {
+  BLOCK_FACE_FRONT,
+  BLOCK_FACE_BACK,
+  BLOCK_FACE_TOP,
+  BLOCK_FACE_BOTTOM,
+  BLOCK_FACE_LEFT,
+  BLOCK_FACE_RIGHT,
+};
 
 struct Transform {
   vec3 translation;
@@ -38,148 +56,233 @@ struct Vertex {
   vec2 texCoords;
 };
 
-void MakeFace(int x, int y, int z, struct Vertex* face) {
-  const struct Vertex frontFace[] = {
-      {-0.5f, -0.5f, 0.5f},
-      {0.f, 1.f, 0.f},
-      {0.f, 0.f, 1.f},
-      {getTexelX(16), getTexelY(15)},
+void MakeFace(enum BlockFace blockFace, int x, int y, int z,
+              int* currentFaceIndex, struct Vertex* vertices,
+              unsigned int* triangles) {
+  const static struct Vertex frontFace[] = {
+      {{-0.5f, -0.5f, 0.5f},
+       {0.f, 1.f, 0.f},
+       {0.f, 0.f, 1.f},
+       {GET_TEXEL_X(16), GET_TEXEL_Y(15)}},
       {{-0.5f, 0.5f, 0.5f},
        {0.f, 1.f, 0.f},
        {0.f, 0.f, 1.f},
-       {getTexelX(16), getTexelY(0)}},
+       {GET_TEXEL_X(16), GET_TEXEL_Y(0)}},
       {{0.5f, 0.5f, 0.5f},
        {0.f, 1.f, 0.f},
        {0.f, 0.f, 1.f},
-       {getTexelX(31), getTexelY(0)}},
+       {GET_TEXEL_X(31), GET_TEXEL_Y(0)}},
       {{0.5f, -0.5f, 0.5f},
        {0.f, 1.f, 0.f},
        {0.f, 0.f, 1.f},
-       {getTexelX(31), getTexelY(15)}},
+       {GET_TEXEL_X(31), GET_TEXEL_Y(15)}},
   };
-  const struct Vertex backFace[] = {
+  const static struct Vertex backFace[] = {
       {{-0.5f, -0.5f, -0.5f},
        {0.f, 1.f, 0.f},
        {0.f, 0.f, -1.f},
-       {getTexelX(16), getTexelY(15)}},
+       {GET_TEXEL_X(16), GET_TEXEL_Y(15)}},
       {{-0.5f, 0.5f, -0.5f},
        {0.f, 1.f, 0.f},
        {0.f, 0.f, -1.f},
-       {getTexelX(16), getTexelY(0)}},
+       {GET_TEXEL_X(16), GET_TEXEL_Y(0)}},
       {{0.5f, 0.5f, -0.5f},
        {0.f, 1.f, 0.f},
        {0.f, 0.f, -1.f},
-       {getTexelX(31), getTexelY(0)}},
+       {GET_TEXEL_X(31), GET_TEXEL_Y(0)}},
       {{0.5f, -0.5f, -0.5f},
        {0.f, 1.f, 0.f},
        {0.f, 0.f, -1.f},
-       {getTexelX(31), getTexelY(15)}},
+       {GET_TEXEL_X(31), GET_TEXEL_Y(15)}},
   };
-  const struct Vertex topFace[] = {
+  const static struct Vertex topFace[] = {
       {{-0.5f, 0.5f, 0.5f},
        {0.f, 1.f, 0.f},
        {0.f, 1.f, 0.f},
-       {getTexelX(0), getTexelY(15)}},
+       {GET_TEXEL_X(0), GET_TEXEL_Y(15)}},
       {{-0.5f, 0.5f, -0.5f},
        {0.f, 1.f, 0.f},
        {0.f, 1.f, 0.f},
-       {getTexelX(0), getTexelY(0)}},
+       {GET_TEXEL_X(0), GET_TEXEL_Y(0)}},
       {{0.5f, 0.5f, -0.5f},
        {0.f, 1.f, 0.f},
        {0.f, 1.f, 0.f},
-       {getTexelX(15), getTexelY(0)}},
+       {GET_TEXEL_X(15), GET_TEXEL_Y(0)}},
       {{0.5f, 0.5f, 0.5f},
        {0.f, 1.f, 0.f},
        {0.f, 1.f, 0.f},
-       {getTexelX(15), getTexelY(15)}},
+       {GET_TEXEL_X(15), GET_TEXEL_Y(15)}},
 
   };
-  const struct Vertex bottomFace[] = {
+  const static struct Vertex bottomFace[] = {
       {{-0.5f, -0.5f, 0.5f},
        {0.f, 1.f, 0.f},
        {0.f, -1.f, 0.f},
-       {getTexelX(16), getTexelY(15)}},
+       {GET_TEXEL_X(16), GET_TEXEL_Y(15)}},
       {{-0.5f, -0.5f, -0.5f},
        {0.f, 1.f, 0.f},
        {0.f, -1.f, 0.f},
-       {getTexelX(16), getTexelY(0)}},
+       {GET_TEXEL_X(16), GET_TEXEL_Y(0)}},
       {{0.5f, -0.5f, -0.5f},
        {0.f, 1.f, 0.f},
        {0.f, -1.f, 0.f},
-       {getTexelX(31), getTexelY(0)}},
+       {GET_TEXEL_X(31), GET_TEXEL_Y(0)}},
       {{0.5f, -0.5f, 0.5f},
        {0.f, 1.f, 0.f},
        {0.f, -1.f, 0.f},
-       {getTexelX(31), getTexelY(15)}},
+       {GET_TEXEL_X(31), GET_TEXEL_Y(15)}},
   };
-  const struct Vertex leftFace[] = {
+  const static struct Vertex leftFace[] = {
       {{-0.5f, -0.5f, -0.5f},
        {0.f, 1.f, 0.f},
        {1.f, 0.f, 0.f},
-       {getTexelX(16), getTexelY(15)}},
+       {GET_TEXEL_X(16), GET_TEXEL_Y(15)}},
       {{-0.5f, 0.5f, -0.5f},
        {0.f, 1.f, 0.f},
        {1.f, 0.f, 0.f},
-       {getTexelX(16), getTexelY(0)}},
+       {GET_TEXEL_X(16), GET_TEXEL_Y(0)}},
       {{-0.5f, 0.5f, 0.5f},
        {0.f, 1.f, 0.f},
        {1.f, 0.f, 0.f},
-       {getTexelX(31), getTexelY(0)}},
+       {GET_TEXEL_X(31), GET_TEXEL_Y(0)}},
       {{-0.5f, -0.5f, 0.5f},
        {0.f, 1.f, 0.f},
        {1.f, 0.f, 0.f},
-       {getTexelX(31), getTexelY(15)}},
+       {GET_TEXEL_X(31), GET_TEXEL_Y(15)}},
   };
-  const struct Vertex rightFace[] = {
+  const static struct Vertex rightFace[] = {
       {{0.5f, -0.5f, -0.5f},
        {0.f, 1.f, 0.f},
        {-1.f, 0.f, 0.f},
-       {getTexelX(16), getTexelY(15)}},
+       {GET_TEXEL_X(16), GET_TEXEL_Y(15)}},
       {{0.5f, 0.5f, -0.5f},
        {0.f, 1.f, 0.f},
        {-1.f, 0.f, 0.f},
-       {getTexelX(16), getTexelY(0)}},
+       {GET_TEXEL_X(16), GET_TEXEL_Y(0)}},
       {{0.5f, 0.5f, 0.5f},
        {0.f, 1.f, 0.f},
        {-1.f, 0.f, 0.f},
-       {getTexelX(31), getTexelY(0)}},
+       {GET_TEXEL_X(31), GET_TEXEL_Y(0)}},
       {{0.5f, -0.5f, 0.5f},
        {0.f, 1.f, 0.f},
        {-1.f, 0.f, 0.f},
-       {getTexelX(31), getTexelY(15)}},
+       {GET_TEXEL_X(31), GET_TEXEL_Y(15)}},
   };
 
-  // TODO: choose which face
+  const struct Vertex* pFaceToCopy = NULL;
 
-  // Add all vertices belonging to a face
-  for (int i = 0; i < 4; i++) {
-    memcpy(&face[i], &topFace[i], sizeof(topFace[i]));
-
-    // TODO: multiply by chunk as well
-    face[i].position[0] += x;
-    face[i].position[1] += y;
-    face[i].position[2] += z;
-  }
-}
-
-void MakeCube(int x, int y, int z, int* currentFaceIndex,
-              struct Vertex* vertices, unsigned int *triangles) {
-  // TODO: create visible faces
-
-  // Face = 4 vertices;
   int currentVertexIndex = (*currentFaceIndex) * 4;
-  // and 6 triangle indices
   int currentTriangleIndex = (*currentFaceIndex) * 6;
-  MakeFace(x, y, z, vertices + currentVertexIndex);
 
-  triangles[currentTriangleIndex] = 0 + currentVertexIndex;
-  triangles[currentTriangleIndex+1] = 2 + currentVertexIndex;
-  triangles[currentTriangleIndex+2] = 1 + currentVertexIndex;
-  triangles[currentTriangleIndex+3] = 0 + currentVertexIndex;
-  triangles[currentTriangleIndex+4] = 3 + currentVertexIndex;
-  triangles[currentTriangleIndex+5] = 2 + currentVertexIndex;
+  struct Vertex* currentVertexStart = vertices + currentVertexIndex;
+
+  // TODO: create triangles more cleanly
+  switch (blockFace) {
+    case BLOCK_FACE_FRONT:
+      pFaceToCopy = frontFace;
+      // Define triangle indices for the face
+      triangles[currentTriangleIndex] = 0 + currentVertexIndex;
+      triangles[currentTriangleIndex + 1] = 2 + currentVertexIndex;
+      triangles[currentTriangleIndex + 2] = 1 + currentVertexIndex;
+      triangles[currentTriangleIndex + 3] = 0 + currentVertexIndex;
+      triangles[currentTriangleIndex + 4] = 3 + currentVertexIndex;
+      triangles[currentTriangleIndex + 5] = 2 + currentVertexIndex;
+      break;
+    case BLOCK_FACE_BACK:
+      pFaceToCopy = backFace;
+      // Define triangle indices for the face
+      triangles[currentTriangleIndex] = 0 + currentVertexIndex;
+      triangles[currentTriangleIndex + 1] = 1 + currentVertexIndex;
+      triangles[currentTriangleIndex + 2] = 2 + currentVertexIndex;
+      triangles[currentTriangleIndex + 3] = 0 + currentVertexIndex;
+      triangles[currentTriangleIndex + 4] = 2 + currentVertexIndex;
+      triangles[currentTriangleIndex + 5] = 3 + currentVertexIndex;
+      break;
+    case BLOCK_FACE_TOP:
+      pFaceToCopy = topFace;
+      // Define triangle indices for the face
+      triangles[currentTriangleIndex] = 0 + currentVertexIndex;
+      triangles[currentTriangleIndex + 1] = 2 + currentVertexIndex;
+      triangles[currentTriangleIndex + 2] = 1 + currentVertexIndex;
+      triangles[currentTriangleIndex + 3] = 0 + currentVertexIndex;
+      triangles[currentTriangleIndex + 4] = 3 + currentVertexIndex;
+      triangles[currentTriangleIndex + 5] = 2 + currentVertexIndex;
+      break;
+    case BLOCK_FACE_BOTTOM:
+      pFaceToCopy = bottomFace;
+      // Define triangle indices for the face
+      triangles[currentTriangleIndex] = 0 + currentVertexIndex;
+      triangles[currentTriangleIndex + 1] = 1 + currentVertexIndex;
+      triangles[currentTriangleIndex + 2] = 2 + currentVertexIndex;
+      triangles[currentTriangleIndex + 3] = 0 + currentVertexIndex;
+      triangles[currentTriangleIndex + 4] = 2 + currentVertexIndex;
+      triangles[currentTriangleIndex + 5] = 3 + currentVertexIndex;
+      break;
+    case BLOCK_FACE_LEFT:
+      pFaceToCopy = leftFace;
+      // Define triangle indices for the face
+      triangles[currentTriangleIndex] = 0 + currentVertexIndex;
+      triangles[currentTriangleIndex + 1] = 2 + currentVertexIndex;
+      triangles[currentTriangleIndex + 2] = 1 + currentVertexIndex;
+      triangles[currentTriangleIndex + 3] = 0 + currentVertexIndex;
+      triangles[currentTriangleIndex + 4] = 3 + currentVertexIndex;
+      triangles[currentTriangleIndex + 5] = 2 + currentVertexIndex;
+      break;
+    case BLOCK_FACE_RIGHT:
+      pFaceToCopy = rightFace;
+      // Define triangle indices for the face
+      triangles[currentTriangleIndex] = 0 + currentVertexIndex;
+      triangles[currentTriangleIndex + 1] = 1 + currentVertexIndex;
+      triangles[currentTriangleIndex + 2] = 2 + currentVertexIndex;
+      triangles[currentTriangleIndex + 3] = 0 + currentVertexIndex;
+      triangles[currentTriangleIndex + 4] = 2 + currentVertexIndex;
+      triangles[currentTriangleIndex + 5] = 3 + currentVertexIndex;
+      break;
+  }
+
+  // TODO:
+  if (pFaceToCopy == NULL) {
+    __debugbreak();
+  }
+  // Copy the 4 face vertices into the vertex buffer
+  memcpy(currentVertexStart, pFaceToCopy, 4 * sizeof(struct Vertex));
+
+  // Set face position based on cube position
+  for (int i = 0; i < 4; i++) {
+    // TODO: multiply by chunk as well
+    currentVertexStart[i].position[0] += x;
+    currentVertexStart[i].position[1] += y;
+    currentVertexStart[i].position[2] += z;
+  }
 
   (*currentFaceIndex)++;
+}
+
+void MakeBlock(unsigned int* chunkBlocks, int x, int y, int z,
+               int* currentFaceIndex, struct Vertex* vertices,
+               unsigned int* triangles) {
+  // TODO: create visible faces
+  // Left expression should be evaluated first and skip all others to avoid
+  // index out of range
+  if (y + 1 == CHUNK_LENGTH || chunkBlocks[PosToIndex(x, y + 1, z)] == 0) {
+    // Adds face to the buffer and incremenets faceIndex
+    MakeFace(BLOCK_FACE_TOP, x, y, z, currentFaceIndex, vertices, triangles);
+  }
+  if (y - 1 == -1 || chunkBlocks[PosToIndex(x, y - 1, z)] == 0) {
+    MakeFace(BLOCK_FACE_BOTTOM, x, y, z, currentFaceIndex, vertices, triangles);
+  }
+  if (x + 1 == CHUNK_LENGTH || chunkBlocks[PosToIndex(x + 1, y, z)] == 0) {
+    MakeFace(BLOCK_FACE_RIGHT, x, y, z, currentFaceIndex, vertices, triangles);
+  }
+  if (x - 1 == -1 || chunkBlocks[PosToIndex(x - 1, y, z)] == 0) {
+    MakeFace(BLOCK_FACE_LEFT, x, y, z, currentFaceIndex, vertices, triangles);
+  }
+  if (z + 1 == CHUNK_LENGTH || chunkBlocks[PosToIndex(x, y, z + 1)] == 0) {
+    MakeFace(BLOCK_FACE_FRONT, x, y, z, currentFaceIndex, vertices, triangles);
+  }
+  if (z - 1 == -1 || chunkBlocks[PosToIndex(x, y, z - 1)] == 0) {
+    MakeFace(BLOCK_FACE_BACK, x, y, z, currentFaceIndex, vertices, triangles);
+  }
 }
 
 int main(void) {
@@ -210,8 +313,7 @@ int main(void) {
   // Init gl
   printf("Status: Using GL %s\n", glGetString(GL_VERSION));
 
-  // TODO:
-  //CALL_GL(glEnable(GL_CULL_FACE));
+  CALL_GL(glEnable(GL_CULL_FACE));
   CALL_GL(glEnable(GL_DEPTH_TEST));
 
   int textureWidth, textureHeight, nrChannels;
@@ -315,6 +417,52 @@ int main(void) {
   fnl_state noise = fnlCreateState();
   noise.noise_type = FNL_NOISE_OPENSIMPLEX2;
 
+  // Create chunk data
+  // TODO: free
+  unsigned int* chunkBlocks =
+      malloc(sizeof(unsigned int) * pow(CHUNK_LENGTH, 3));
+
+  // Populate chunk
+  for (int x = 0; x < CHUNK_LENGTH; x++) {
+    for (int y = 0; y < CHUNK_LENGTH; y++) {
+      for (int z = 0; z < CHUNK_LENGTH; z++) {
+        // TODO: proper block types
+        chunkBlocks[PosToIndex(x, y, z)] = 1;
+      }
+    }
+  }
+
+  // Create chunk mesh
+  // This needs to be updated on every change
+
+  // TODO: allocate in a less wasteful way?
+  const int maxFacesInChunk = (pow(CHUNK_LENGTH, 3) * 6);
+
+  struct Vertex* vertices = malloc(maxFacesInChunk * 4 * sizeof(struct Vertex));
+  unsigned int* triangles = malloc(maxFacesInChunk * 6 * sizeof(unsigned int));
+
+  int currentFaceIndex = 0;
+  for (int x = 0; x < CHUNK_LENGTH; x++) {
+    for (int y = 0; y < CHUNK_LENGTH; y++) {
+      for (int z = 0; z < CHUNK_LENGTH; z++) {
+        MakeBlock(chunkBlocks, x, y, z, &currentFaceIndex, vertices, triangles);
+      }
+    }
+  }
+
+  // We copy only the existing vertices based on face index
+  // ignoring the rest of data that is garbage, allocated for the worst case
+  // when culling faces
+  CALL_GL(glBufferData(GL_ARRAY_BUFFER,
+                       sizeof(struct Vertex) * 4 * currentFaceIndex, vertices,
+                       GL_STATIC_DRAW));
+  free(vertices);
+
+  glBufferData(GL_ELEMENT_ARRAY_BUFFER,
+               sizeof(unsigned int) * 6 * currentFaceIndex, triangles,
+               GL_STATIC_DRAW);
+  free(triangles);
+
   // Render loop
   while (!glfwWindowShouldClose(window)) {
     float currentTimeS = (float)glfwGetTime();
@@ -411,34 +559,9 @@ int main(void) {
 
     mat4 mvp;
 
+    // Fog color
     CALL_GL(glClearColor(0.8f, 0.9f, 1.f, 1.f));
     CALL_GL(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
-
-    // generate chunk mesh
-    const int chunkSize = 16;
-    const int maxFaces = (pow(chunkSize, 3) * 6);
-
-    // TODO: allocate in a less wasteful way?
-    struct Vertex* vertices = malloc(maxFaces * 4 * sizeof(struct Vertex));
-    unsigned int* triangles = malloc(maxFaces * 6 * sizeof(unsigned int));
-
-    int currentFaceIndex = 0;
-    for (int x = 0; x < chunkSize; x++) {
-      for (int y = 0; y < chunkSize; y++) {
-		  for (int z = 0; z < chunkSize; z++) {
-			MakeCube(x, y, z, &currentFaceIndex, vertices, triangles);
-		  }
-      }
-    }
-
-    // We copy only the existing vertices based on face index, not the size of the vertices array
-    CALL_GL(glBufferData(GL_ARRAY_BUFFER, sizeof(struct Vertex) * 4 * currentFaceIndex, vertices,
-                         GL_STATIC_DRAW));
-    free(vertices);
-
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned int) * 6 * currentFaceIndex, triangles,
-                 GL_STATIC_DRAW);
-    free(triangles);
 
     // position chunk
     mat4 model = GLM_MAT4_IDENTITY_INIT;
@@ -447,8 +570,8 @@ int main(void) {
 
     // draw chunk
     CALL_GL(glUniformMatrix4fv(MVPUniformLocation, 1, GL_FALSE, mvp[0]));
-    CALL_GL(glDrawElements(GL_TRIANGLES, currentFaceIndex * 6,
-                           GL_UNSIGNED_INT, 0));
+    CALL_GL(
+        glDrawElements(GL_TRIANGLES, currentFaceIndex * 6, GL_UNSIGNED_INT, 0));
     glfwSwapBuffers(window);
 
     glfwPollEvents();
