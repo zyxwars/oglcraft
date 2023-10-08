@@ -12,6 +12,7 @@
 #define LOG_REMOTE(label, msg, file, line) \
   printf("[%s] %s in %s:%d\n", label, msg, file, line);
 
+// TODO: dissable error log calls in release
 #define CALL_GL(x) \
   x;               \
   LogGLError(__FILE__, __LINE__);
