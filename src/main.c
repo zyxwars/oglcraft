@@ -6,26 +6,18 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #define STB_IMAGE_IMPLEMENTATION
+#include <stb_image.h>
 #include <cglm/affine.h>
-#include <cglm/cam.h>
 #include <cglm/mat4.h>
 #include <cglm/vec2.h>
 #include <cglm/vec3.h>
-#include <stb_image.h>
 #define FNL_IMPL
 #include <FastNoiseLite.h>
 
 #include "GlWrapper.h"
 #include "Shader.h"
-#include "Block.h"
-
-struct Transform {
-  vec3 translation;
-  vec3 rotation;
-  vec3 forward;
-  vec3 right;
-  vec3 up;
-};
+#include "Chunk.h"
+#include "Camera.h"
 
 int main(void) {
   // Init glfw
@@ -94,37 +86,7 @@ int main(void) {
   CALL_GL(GLint MVPUniformLocation =
               glGetUniformLocation(shaderProgram, "u_MVP"));
 
-  mat4 projection;
-  glm_perspective(45.f, 640.f / 480.f, 1.f, 1000.f, projection);
-
-  struct Transform cameraTransform;
-  cameraTransform.translation[0] = 0.f;
-  cameraTransform.translation[1] = 10.f;
-  cameraTransform.translation[2] = 0.f;
-
-  cameraTransform.rotation[0] = -90.f;
-  cameraTransform.rotation[1] = 0.f;
-  cameraTransform.rotation[2] = 0.f;
-
-  cameraTransform.forward[0] = 0.f;
-  cameraTransform.forward[1] = 0.f;
-  cameraTransform.forward[2] = -1.f;
-
-  vec3 up = {0.f, 1.f, 0.f};
-
-  glm_vec3_cross(up, cameraTransform.forward, cameraTransform.right);
-  glm_vec3_normalize(cameraTransform.right);
-  glm_vec3_cross(cameraTransform.forward, cameraTransform.right,
-                 cameraTransform.up);
-
-  float movementSpeed = 7.5f;
-  float speedMultiplier = 0.f;
-  int lastVerticalInput = 0;
-  int lastHorizontalInput = 0;
-
-  int mouseHasMoved = 0;
-  double lastMouseX, lastMouseY;
-  float mouseSens = 0.01f;
+  struct Camera* camera = CreateCamera();
 
   float deltaTimeS = 0.f;
   float lastTimeS = 0.f;
@@ -165,74 +127,8 @@ int main(void) {
     double mouseX, mouseY;
     glfwGetCursorPos(window, &mouseX, &mouseY);
 
-    // camera rotation
-    if (mouseHasMoved) {
-      float relativeMouseX = mouseX - lastMouseX;
-      float relativeMouseY = mouseY - lastMouseY;
-
-      cameraTransform.rotation[0] += relativeMouseX * mouseSens;
-      cameraTransform.rotation[1] += -relativeMouseY * mouseSens;
-
-      // clamp y rotation
-      if (cameraTransform.rotation[1] > 89.9f) {
-        cameraTransform.rotation[1] = 89.9f;
-      } else if (cameraTransform.rotation[1] < -89.9f) {
-        cameraTransform.rotation[1] = -89.9f;
-      }
-
-      // TODO: visualize
-      cameraTransform.forward[0] = cos(glm_rad(cameraTransform.rotation[0])) *
-                                   cos(glm_rad(cameraTransform.rotation[1]));
-      cameraTransform.forward[1] = sin(glm_rad(cameraTransform.rotation[1]));
-      cameraTransform.forward[2] = sin(glm_rad(cameraTransform.rotation[0])) *
-                                   cos(glm_rad(cameraTransform.rotation[1]));
-
-      glm_vec3_normalize(cameraTransform.forward);
-
-      vec3 up = {0.f, 1.f, 0.f};
-
-      glm_vec3_cross(up, cameraTransform.forward, cameraTransform.right);
-      glm_vec3_normalize(cameraTransform.right);
-      glm_vec3_cross(cameraTransform.forward, cameraTransform.right,
-                     cameraTransform.up);
-    } else {
-      mouseHasMoved = 1;
-    }
-
-    lastMouseX = mouseX;
-    lastMouseY = mouseY;
-
-    vec3 zMovement;
-    glm_vec3_scale(cameraTransform.forward,
-                   movementSpeed * verticalInput * deltaTimeS * speedMultiplier,
-                   zMovement);
-    glm_vec3_add(cameraTransform.translation, zMovement,
-                 cameraTransform.translation);
-
-    vec3 xMovement;
-    glm_vec3_scale(
-        cameraTransform.right,
-        movementSpeed * horizontalInput * deltaTimeS * speedMultiplier,
-        xMovement);
-    glm_vec3_add(cameraTransform.translation, xMovement,
-                 cameraTransform.translation);
-
-    if ((verticalInput == lastVerticalInput && verticalInput != 0) ||
-        (horizontalInput == lastHorizontalInput && horizontalInput != 0)) {
-      speedMultiplier += deltaTimeS;
-    } else {
-      speedMultiplier = 0;
-    }
-
-    lastVerticalInput = verticalInput;
-    lastHorizontalInput = horizontalInput;
-
-    mat4 view;
-    vec3 cameraTarget;
-    glm_vec3_add(cameraTransform.translation, cameraTransform.forward,
-                 cameraTarget);
-    glm_lookat(cameraTransform.translation, cameraTarget, cameraTransform.up,
-               view);
+    MoveCamera((float)mouseX, (float)mouseY, verticalInput, horizontalInput,
+               deltaTimeS, camera);
 
     mat4 mvp;
 
@@ -243,7 +139,9 @@ int main(void) {
     // position chunk
     mat4 model = GLM_MAT4_IDENTITY_INIT;
     glm_translate(model, (vec3){0, 0, 0});
-    glm_mat4_mulN((mat4*[]){&projection, &view, &model}, 3, mvp);
+    glm_mat4_mulN(
+        (mat4*[]){&(camera->projectionMatrix), &(camera->viewMatrix), &model},
+        3, mvp);
 
     // draw chunk
     CALL_GL(glUniformMatrix4fv(MVPUniformLocation, 1, GL_FALSE, mvp[0]));

@@ -2,4 +2,3 @@
 
 - normalize diagonal speed
 - improve fog
-- hide inner faces

@@ -1,4 +1,4 @@
-#include "Block.h"
+#include "Chunk.h"
 
 enum BlockFace {
   BLOCK_FACE_FRONT,
@@ -253,16 +253,19 @@ void AddBlockToBuffer(unsigned int* chunkData, int x, int y, int z,
   }
 }
 
-unsigned int* CreateChunk(fnl_state* noiseState, int x, int z) {
+unsigned int* CreateChunk(fnl_state* noiseState, int chunkX, int chunkZ) {
   // TODO: free on chunk destroy
-  unsigned int* chunkData = calloc(pow(CHUNK_LENGTH, 3), sizeof(unsigned int));
+  unsigned int* chunkData =
+      calloc((size_t)pow(CHUNK_LENGTH, 3), sizeof(unsigned int));
 
   // Populate chunk
   for (int x = 0; x < CHUNK_LENGTH; x++) {
     for (int z = 0; z < CHUNK_LENGTH; z++) {
       // TODO: proper block types
       // TODO: multiply by chunk coords
-      int height = fnlGetNoise2D(noiseState, x, z) * CHUNK_LENGTH;
+      int height = fnlGetNoise2D(noiseState, x + chunkX * CHUNK_LENGTH,
+                                 z + chunkZ * CHUNK_LENGTH) *
+                   CHUNK_LENGTH;
       // Fill every block under height
       for (int y = 0; y < height; y++) {
         chunkData[PosToIndex(x, y, z)] = 1;
@@ -304,7 +307,7 @@ int CreateChunkMesh(unsigned int* chunkData) {
   CALL_GL(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo));
 
   // TODO: allocate in a less wasteful way?
-  const int maxFacesInChunk = (pow(CHUNK_LENGTH, 3) * 6);
+  const int maxFacesInChunk = ((int)pow(CHUNK_LENGTH, 3) * 6);
 
   struct Vertex* vertices = malloc(maxFacesInChunk * 4 * sizeof(struct Vertex));
   unsigned int* triangles = malloc(maxFacesInChunk * 6 * sizeof(unsigned int));
