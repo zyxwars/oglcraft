@@ -45,29 +45,31 @@ int CreateShaderProgram(const char* vertexSourcePath,
   FileToString(vertexSourcePath, &vertexSource);
   GLuint vertexShader = CompileShader(GL_VERTEX_SHADER, vertexSource);
   free(vertexSource);
+  vertexSource = NULL;
 
   char* fragmentSource = NULL;
   FileToString(fragmentSourcePath, &fragmentSource);
   GLuint fragmentShader = CompileShader(GL_FRAGMENT_SHADER, fragmentSource);
   free(fragmentSource);
+  fragmentSource = NULL;
 
-  GLuint id = CALL_GL(glCreateProgram());
+  GLuint programId = CALL_GL(glCreateProgram());
 
-  CALL_GL(glAttachShader(id, vertexShader));
-  CALL_GL(glAttachShader(id, fragmentShader));
+  CALL_GL(glAttachShader(programId, vertexShader));
+  CALL_GL(glAttachShader(programId, fragmentShader));
 
-  CALL_GL(glLinkProgram(id));
+  CALL_GL(glLinkProgram(programId));
 
   CALL_GL(glDeleteShader(vertexShader));
   CALL_GL(glDeleteShader(fragmentShader));
 
   int success;
   char infoLog[512];
-  CALL_GL(glGetProgramiv(id, GL_LINK_STATUS, &success));
+  CALL_GL(glGetProgramiv(programId, GL_LINK_STATUS, &success));
   if (!success) {
-    CALL_GL(glGetProgramInfoLog(id, 512, NULL, infoLog));
+    CALL_GL(glGetProgramInfoLog(programId, 512, NULL, infoLog));
     printf("Shader program error: %s\n", infoLog);
   }
 
-  return id;
+  return programId;
 }

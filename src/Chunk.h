@@ -10,34 +10,33 @@
 #include <FastNoiseLite.h>
 
 #include "GlWrapper.h"
-
-// TODO: remove hardcoded width and height
-// Get center of texel to avoid bleeding
-#define GET_TEXEL_X(x) ((x + 0.5f) / 32.f)
-
-#define GET_TEXEL_Y(y) ((y + 0.5f) / 16.f)
+#include "Block.h"
 
 #define CHUNK_LENGTH 16
+#define CHUNK_HEIGHT 32
 // how many blocks fit in 1 tall chunk
-#define CHUNK_PLANE_AREA CHUNK_LENGTH* CHUNK_LENGTH
+#define CHUNK_PLANE_AREA (CHUNK_LENGTH * CHUNK_LENGTH)
+#define CHUNK_VOLUME (CHUNK_PLANE_AREA * CHUNK_HEIGHT)
 
-struct Vertex {
-  vec3 position;
-  vec3 color;
-  vec3 normal;
-  vec2 texCoords;
+struct Chunk {
+  int x, z;
+  unsigned int blockData[CHUNK_VOLUME];
+  int numOfFaces;
+  GLuint vbo;
+  GLuint ebo;
 };
 
+// TODO: move to utils or something more general
 int PosToIndex(int x, int y, int z);
 
-void AddFaceToBuffer(enum BlockFace blockFace, int x, int y, int z,
-                     int* currentFaceIndex, struct Vertex* vertices,
-                     unsigned int* triangles);
+struct Chunk* CreateChunk(fnl_state* noiseState, int x, int z);
 
-void AddBlockToBuffer(unsigned int* chunkBlocks, int x, int y, int z,
-                      int* currentFaceIndex, struct Vertex* vertices,
-                      unsigned int* triangles);
+void DestroyChunk(struct Chunk** chunk);
 
-unsigned int* CreateChunk(fnl_state* noiseState, int x, int z);
+void DrawChunk(struct Chunk* chunk);
 
-int CreateChunkMesh(unsigned int* chunkData);
+struct Chunk* GetChunk(int x, int z, struct Chunk** loadedChunks,
+                       int loadedChunksSize, fnl_state* noiseState);
+
+void UnloadChunks(int minChunkX, int minChunkZ, int maxChunkX, int maxChunkZ,
+                  struct Chunk** loadedChunks, int loadedChunksSize);

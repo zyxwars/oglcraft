@@ -1,288 +1,88 @@
 #include "Chunk.h"
 
-enum BlockFace {
-  BLOCK_FACE_FRONT,
-  BLOCK_FACE_BACK,
-  BLOCK_FACE_TOP,
-  BLOCK_FACE_BOTTOM,
-  BLOCK_FACE_LEFT,
-  BLOCK_FACE_RIGHT,
-};
-
 int PosToIndex(int x, int y, int z) {
   return x + z * CHUNK_LENGTH + y * CHUNK_PLANE_AREA;
 }
 
-void AddFaceToBuffer(enum BlockFace blockFace, int x, int y, int z,
-                     int* currentFaceIndex, struct Vertex* vertices,
-                     unsigned int* triangles) {
-  const static struct Vertex frontFace[] = {
-      {{-0.5f, -0.5f, 0.5f},
-       {0.f, 1.f, 0.f},
-       {0.f, 0.f, 1.f},
-       {GET_TEXEL_X(16), GET_TEXEL_Y(15)}},
-      {{-0.5f, 0.5f, 0.5f},
-       {0.f, 1.f, 0.f},
-       {0.f, 0.f, 1.f},
-       {GET_TEXEL_X(16), GET_TEXEL_Y(0)}},
-      {{0.5f, 0.5f, 0.5f},
-       {0.f, 1.f, 0.f},
-       {0.f, 0.f, 1.f},
-       {GET_TEXEL_X(31), GET_TEXEL_Y(0)}},
-      {{0.5f, -0.5f, 0.5f},
-       {0.f, 1.f, 0.f},
-       {0.f, 0.f, 1.f},
-       {GET_TEXEL_X(31), GET_TEXEL_Y(15)}},
-  };
-  const static struct Vertex backFace[] = {
-      {{-0.5f, -0.5f, -0.5f},
-       {0.f, 1.f, 0.f},
-       {0.f, 0.f, -1.f},
-       {GET_TEXEL_X(16), GET_TEXEL_Y(15)}},
-      {{-0.5f, 0.5f, -0.5f},
-       {0.f, 1.f, 0.f},
-       {0.f, 0.f, -1.f},
-       {GET_TEXEL_X(16), GET_TEXEL_Y(0)}},
-      {{0.5f, 0.5f, -0.5f},
-       {0.f, 1.f, 0.f},
-       {0.f, 0.f, -1.f},
-       {GET_TEXEL_X(31), GET_TEXEL_Y(0)}},
-      {{0.5f, -0.5f, -0.5f},
-       {0.f, 1.f, 0.f},
-       {0.f, 0.f, -1.f},
-       {GET_TEXEL_X(31), GET_TEXEL_Y(15)}},
-  };
-  const static struct Vertex topFace[] = {
-      {{-0.5f, 0.5f, 0.5f},
-       {0.f, 1.f, 0.f},
-       {0.f, 1.f, 0.f},
-       {GET_TEXEL_X(0), GET_TEXEL_Y(15)}},
-      {{-0.5f, 0.5f, -0.5f},
-       {0.f, 1.f, 0.f},
-       {0.f, 1.f, 0.f},
-       {GET_TEXEL_X(0), GET_TEXEL_Y(0)}},
-      {{0.5f, 0.5f, -0.5f},
-       {0.f, 1.f, 0.f},
-       {0.f, 1.f, 0.f},
-       {GET_TEXEL_X(15), GET_TEXEL_Y(0)}},
-      {{0.5f, 0.5f, 0.5f},
-       {0.f, 1.f, 0.f},
-       {0.f, 1.f, 0.f},
-       {GET_TEXEL_X(15), GET_TEXEL_Y(15)}},
+// TODO: create update function
+void CreateChunkMesh(struct Chunk* chunk) {
+  CALL_GL(glGenBuffers(1, &(chunk->vbo)));
+  CALL_GL(glBindBuffer(GL_ARRAY_BUFFER, chunk->vbo));
 
-  };
-  const static struct Vertex bottomFace[] = {
-      {{-0.5f, -0.5f, 0.5f},
-       {0.f, 1.f, 0.f},
-       {0.f, -1.f, 0.f},
-       {GET_TEXEL_X(16), GET_TEXEL_Y(15)}},
-      {{-0.5f, -0.5f, -0.5f},
-       {0.f, 1.f, 0.f},
-       {0.f, -1.f, 0.f},
-       {GET_TEXEL_X(16), GET_TEXEL_Y(0)}},
-      {{0.5f, -0.5f, -0.5f},
-       {0.f, 1.f, 0.f},
-       {0.f, -1.f, 0.f},
-       {GET_TEXEL_X(31), GET_TEXEL_Y(0)}},
-      {{0.5f, -0.5f, 0.5f},
-       {0.f, 1.f, 0.f},
-       {0.f, -1.f, 0.f},
-       {GET_TEXEL_X(31), GET_TEXEL_Y(15)}},
-  };
-  const static struct Vertex leftFace[] = {
-      {{-0.5f, -0.5f, -0.5f},
-       {0.f, 1.f, 0.f},
-       {1.f, 0.f, 0.f},
-       {GET_TEXEL_X(16), GET_TEXEL_Y(15)}},
-      {{-0.5f, 0.5f, -0.5f},
-       {0.f, 1.f, 0.f},
-       {1.f, 0.f, 0.f},
-       {GET_TEXEL_X(16), GET_TEXEL_Y(0)}},
-      {{-0.5f, 0.5f, 0.5f},
-       {0.f, 1.f, 0.f},
-       {1.f, 0.f, 0.f},
-       {GET_TEXEL_X(31), GET_TEXEL_Y(0)}},
-      {{-0.5f, -0.5f, 0.5f},
-       {0.f, 1.f, 0.f},
-       {1.f, 0.f, 0.f},
-       {GET_TEXEL_X(31), GET_TEXEL_Y(15)}},
-  };
-  const static struct Vertex rightFace[] = {
-      {{0.5f, -0.5f, -0.5f},
-       {0.f, 1.f, 0.f},
-       {-1.f, 0.f, 0.f},
-       {GET_TEXEL_X(16), GET_TEXEL_Y(15)}},
-      {{0.5f, 0.5f, -0.5f},
-       {0.f, 1.f, 0.f},
-       {-1.f, 0.f, 0.f},
-       {GET_TEXEL_X(16), GET_TEXEL_Y(0)}},
-      {{0.5f, 0.5f, 0.5f},
-       {0.f, 1.f, 0.f},
-       {-1.f, 0.f, 0.f},
-       {GET_TEXEL_X(31), GET_TEXEL_Y(0)}},
-      {{0.5f, -0.5f, 0.5f},
-       {0.f, 1.f, 0.f},
-       {-1.f, 0.f, 0.f},
-       {GET_TEXEL_X(31), GET_TEXEL_Y(15)}},
-  };
+  CALL_GL(glGenBuffers(1, &(chunk->ebo)));
+  CALL_GL(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, chunk->ebo));
 
-  const struct Vertex* pFaceToCopy = NULL;
+  // TODO: allocate in a less wasteful way?
+  const int maxFacesInChunk = ((int)CHUNK_VOLUME * 6);
 
-  int currentVertexIndex = (*currentFaceIndex) * 4;
-  int currentTriangleIndex = (*currentFaceIndex) * 6;
+  struct Vertex* vertices = malloc(maxFacesInChunk * 4 * sizeof(struct Vertex));
+  unsigned int* triangles = malloc(maxFacesInChunk * 6 * sizeof(unsigned int));
 
-  struct Vertex* currentVertexStart = vertices + currentVertexIndex;
-
-  // TODO: create triangles more cleanly
-  switch (blockFace) {
-    case BLOCK_FACE_FRONT:
-      pFaceToCopy = frontFace;
-      // Define triangle indices for the face
-      triangles[currentTriangleIndex] = 0 + currentVertexIndex;
-      triangles[currentTriangleIndex + 1] = 2 + currentVertexIndex;
-      triangles[currentTriangleIndex + 2] = 1 + currentVertexIndex;
-      triangles[currentTriangleIndex + 3] = 0 + currentVertexIndex;
-      triangles[currentTriangleIndex + 4] = 3 + currentVertexIndex;
-      triangles[currentTriangleIndex + 5] = 2 + currentVertexIndex;
-      break;
-    case BLOCK_FACE_BACK:
-      pFaceToCopy = backFace;
-      // Define triangle indices for the face
-      triangles[currentTriangleIndex] = 0 + currentVertexIndex;
-      triangles[currentTriangleIndex + 1] = 1 + currentVertexIndex;
-      triangles[currentTriangleIndex + 2] = 2 + currentVertexIndex;
-      triangles[currentTriangleIndex + 3] = 0 + currentVertexIndex;
-      triangles[currentTriangleIndex + 4] = 2 + currentVertexIndex;
-      triangles[currentTriangleIndex + 5] = 3 + currentVertexIndex;
-      break;
-    case BLOCK_FACE_TOP:
-      pFaceToCopy = topFace;
-      // Define triangle indices for the face
-      triangles[currentTriangleIndex] = 0 + currentVertexIndex;
-      triangles[currentTriangleIndex + 1] = 2 + currentVertexIndex;
-      triangles[currentTriangleIndex + 2] = 1 + currentVertexIndex;
-      triangles[currentTriangleIndex + 3] = 0 + currentVertexIndex;
-      triangles[currentTriangleIndex + 4] = 3 + currentVertexIndex;
-      triangles[currentTriangleIndex + 5] = 2 + currentVertexIndex;
-      break;
-    case BLOCK_FACE_BOTTOM:
-      pFaceToCopy = bottomFace;
-      // Define triangle indices for the face
-      triangles[currentTriangleIndex] = 0 + currentVertexIndex;
-      triangles[currentTriangleIndex + 1] = 1 + currentVertexIndex;
-      triangles[currentTriangleIndex + 2] = 2 + currentVertexIndex;
-      triangles[currentTriangleIndex + 3] = 0 + currentVertexIndex;
-      triangles[currentTriangleIndex + 4] = 2 + currentVertexIndex;
-      triangles[currentTriangleIndex + 5] = 3 + currentVertexIndex;
-      break;
-    case BLOCK_FACE_LEFT:
-      pFaceToCopy = leftFace;
-      // Define triangle indices for the face
-      triangles[currentTriangleIndex] = 0 + currentVertexIndex;
-      triangles[currentTriangleIndex + 1] = 2 + currentVertexIndex;
-      triangles[currentTriangleIndex + 2] = 1 + currentVertexIndex;
-      triangles[currentTriangleIndex + 3] = 0 + currentVertexIndex;
-      triangles[currentTriangleIndex + 4] = 3 + currentVertexIndex;
-      triangles[currentTriangleIndex + 5] = 2 + currentVertexIndex;
-      break;
-    case BLOCK_FACE_RIGHT:
-      pFaceToCopy = rightFace;
-      // Define triangle indices for the face
-      triangles[currentTriangleIndex] = 0 + currentVertexIndex;
-      triangles[currentTriangleIndex + 1] = 1 + currentVertexIndex;
-      triangles[currentTriangleIndex + 2] = 2 + currentVertexIndex;
-      triangles[currentTriangleIndex + 3] = 0 + currentVertexIndex;
-      triangles[currentTriangleIndex + 4] = 2 + currentVertexIndex;
-      triangles[currentTriangleIndex + 5] = 3 + currentVertexIndex;
-      break;
+  int currentFaceIndex = 0;
+  for (int x = 0; x < CHUNK_LENGTH; x++) {
+    for (int y = 0; y < CHUNK_HEIGHT; y++) {
+      for (int z = 0; z < CHUNK_LENGTH; z++) {
+        AddBlockToBuffer(chunk->blockData, x, y, z, x + chunk->x * CHUNK_LENGTH,
+                         z + chunk->z * CHUNK_LENGTH, &currentFaceIndex,
+                         vertices, triangles);
+      }
+    }
   }
 
-  // TODO:
-  if (pFaceToCopy == NULL) {
-    __debugbreak();
-  }
-  // Copy the 4 face vertices into the vertex buffer
-  memcpy(currentVertexStart, pFaceToCopy, 4 * sizeof(struct Vertex));
+  // We copy only the existing vertices based on face index
+  // ignoring the rest of data that is garbage, allocated for the worst case
+  // when culling faces
+  CALL_GL(glBufferData(GL_ARRAY_BUFFER,
+                       sizeof(struct Vertex) * 4 * currentFaceIndex, vertices,
+                       GL_STATIC_DRAW));
+  glBufferData(GL_ELEMENT_ARRAY_BUFFER,
+               sizeof(unsigned int) * 6 * currentFaceIndex, triangles,
+               GL_STATIC_DRAW);
+  free(vertices);
+  free(triangles);
+  vertices = NULL;
+  triangles = NULL;
 
-  // Set face position based on cube position
-  for (int i = 0; i < 4; i++) {
-    // TODO: multiply by chunk as well
-    currentVertexStart[i].position[0] += x;
-    currentVertexStart[i].position[1] += y;
-    currentVertexStart[i].position[2] += z;
-  }
-
-  (*currentFaceIndex)++;
+  chunk->numOfFaces = currentFaceIndex;
 }
 
-void AddBlockToBuffer(unsigned int* chunkData, int x, int y, int z,
-                      int* currentFaceIndex, struct Vertex* vertices,
-                      unsigned int* triangles) {
-  // Check block type
-  // Don't draw anything if block is air
-  if (chunkData[PosToIndex(x, y, z)] == 0) {
-    return;
-  }
-  // TODO: create visible faces
-  // Left expression should be evaluated first and skip all others to avoid
-  // index out of range
-  if (y + 1 == CHUNK_LENGTH || chunkData[PosToIndex(x, y + 1, z)] == 0) {
-    // Adds face to the buffer and incremenets faceIndex
-    AddFaceToBuffer(BLOCK_FACE_TOP, x, y, z, currentFaceIndex, vertices,
-                    triangles);
-  }
-  if (y - 1 == -1 || chunkData[PosToIndex(x, y - 1, z)] == 0) {
-    AddFaceToBuffer(BLOCK_FACE_BOTTOM, x, y, z, currentFaceIndex, vertices,
-                    triangles);
-  }
-  if (x + 1 == CHUNK_LENGTH || chunkData[PosToIndex(x + 1, y, z)] == 0) {
-    AddFaceToBuffer(BLOCK_FACE_RIGHT, x, y, z, currentFaceIndex, vertices,
-                    triangles);
-  }
-  if (x - 1 == -1 || chunkData[PosToIndex(x - 1, y, z)] == 0) {
-    AddFaceToBuffer(BLOCK_FACE_LEFT, x, y, z, currentFaceIndex, vertices,
-                    triangles);
-  }
-  if (z + 1 == CHUNK_LENGTH || chunkData[PosToIndex(x, y, z + 1)] == 0) {
-    AddFaceToBuffer(BLOCK_FACE_FRONT, x, y, z, currentFaceIndex, vertices,
-                    triangles);
-  }
-  if (z - 1 == -1 || chunkData[PosToIndex(x, y, z - 1)] == 0) {
-    AddFaceToBuffer(BLOCK_FACE_BACK, x, y, z, currentFaceIndex, vertices,
-                    triangles);
-  }
-}
-
-unsigned int* CreateChunk(fnl_state* noiseState, int chunkX, int chunkZ) {
-  // TODO: free on chunk destroy
-  unsigned int* chunkData =
-      calloc((size_t)pow(CHUNK_LENGTH, 3), sizeof(unsigned int));
+struct Chunk* CreateChunk(fnl_state* noiseState, int chunkX, int chunkZ) {
+  struct Chunk* chunk = calloc(1, sizeof(struct Chunk));
+  chunk->x = chunkX;
+  chunk->z = chunkZ;
 
   // Populate chunk
   for (int x = 0; x < CHUNK_LENGTH; x++) {
     for (int z = 0; z < CHUNK_LENGTH; z++) {
       // TODO: proper block types
-      // TODO: multiply by chunk coords
-      int height = fnlGetNoise2D(noiseState, x + chunkX * CHUNK_LENGTH,
-                                 z + chunkZ * CHUNK_LENGTH) *
-                   CHUNK_LENGTH;
+      float noise = fnlGetNoise2D(noiseState, x + chunk->x * CHUNK_LENGTH,
+                                  z + chunk->z * CHUNK_LENGTH);
+      noise = (noise + 1.f) / 2.f;
+      // noise = (float)pow(noise, 3);
+      int height = noise * CHUNK_HEIGHT;
+      if (height == 0) height = 1;
       // Fill every block under height
       for (int y = 0; y < height; y++) {
-        chunkData[PosToIndex(x, y, z)] = 1;
+        chunk->blockData[PosToIndex(x, y, z)] = 1;
       }
     }
   }
 
-  return chunkData;
+  CreateChunkMesh(chunk);
+
+  return chunk;
 };
 
-// TODO: create update function
-// TODO: create struct to store vbo, ebo to bind when rendering each chunk
-int CreateChunkMesh(unsigned int* chunkData) {
-  // TODO: Destroy buffer on chunk destroy
-  GLuint vbo;
-  CALL_GL(glGenBuffers(1, &vbo));
-  CALL_GL(glBindBuffer(GL_ARRAY_BUFFER, vbo));
+void DestroyChunk(struct Chunk** chunk) {
+  CALL_GL(glDeleteBuffers(1, &(*chunk)->vbo));
+  CALL_GL(glDeleteBuffers(1, &(*chunk)->ebo));
+  free(*chunk);
+  *chunk = NULL;
+}
+
+void DrawChunk(struct Chunk* chunk) {
+  CALL_GL(glBindBuffer(GL_ARRAY_BUFFER, chunk->vbo));
+  CALL_GL(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, chunk->ebo));
 
   int stride = sizeof(struct Vertex);
 
@@ -302,38 +102,53 @@ int CreateChunkMesh(unsigned int* chunkData) {
   CALL_GL(glVertexAttribPointer(3, 2, GL_FLOAT, GL_FALSE, stride,
                                 (void*)offsetof(struct Vertex, texCoords)));
 
-  GLuint ebo;
-  CALL_GL(glGenBuffers(1, &ebo));
-  CALL_GL(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo));
+  CALL_GL(
+      glDrawElements(GL_TRIANGLES, chunk->numOfFaces * 6, GL_UNSIGNED_INT, 0));
+}
 
-  // TODO: allocate in a less wasteful way?
-  const int maxFacesInChunk = ((int)pow(CHUNK_LENGTH, 3) * 6);
+struct Chunk* GetChunk(int x, int z, struct Chunk** loadedChunks,
+                       int loadedChunksSize, fnl_state* noiseState) {
+  // Use empty index to store new chunk
+  int emptyIndex = -1;
+  for (int i = 0; i < loadedChunksSize; i++) {
+    // Skips empty chunks
+    if (loadedChunks[i] == NULL) {
+      if (emptyIndex == -1) emptyIndex = i;
+      continue;
+    }
 
-  struct Vertex* vertices = malloc(maxFacesInChunk * 4 * sizeof(struct Vertex));
-  unsigned int* triangles = malloc(maxFacesInChunk * 6 * sizeof(unsigned int));
-
-  int currentFaceIndex = 0;
-  for (int x = 0; x < CHUNK_LENGTH; x++) {
-    for (int y = 0; y < CHUNK_LENGTH; y++) {
-      for (int z = 0; z < CHUNK_LENGTH; z++) {
-        AddBlockToBuffer(chunkData, x, y, z, &currentFaceIndex, vertices,
-                         triangles);
-      }
+    // Find chunk
+    if (loadedChunks[i]->x == x && loadedChunks[i]->z == z) {
+      return loadedChunks[i];
     }
   }
 
-  // We copy only the existing vertices based on face index
-  // ignoring the rest of data that is garbage, allocated for the worst case
-  // when culling faces
-  CALL_GL(glBufferData(GL_ARRAY_BUFFER,
-                       sizeof(struct Vertex) * 4 * currentFaceIndex, vertices,
-                       GL_STATIC_DRAW));
-  free(vertices);
+  // Chunks weren't unloaded in time
+  if (emptyIndex == -1) {
+    return NULL;
+  }
 
-  glBufferData(GL_ELEMENT_ARRAY_BUFFER,
-               sizeof(unsigned int) * 6 * currentFaceIndex, triangles,
-               GL_STATIC_DRAW);
-  free(triangles);
+  // Create chunk
+  struct Chunk* chunk = CreateChunk(noiseState, x, z);
+  printf("Chunk: (%d, %d) created\n", x, z);
+  loadedChunks[emptyIndex] = chunk;
 
-  return currentFaceIndex;
+  return chunk;
+};
+
+void UnloadChunks(int minChunkX, int minChunkZ, int maxChunkX, int maxChunkZ,
+                  struct Chunk** loadedChunks, int loadedChunksSize) {
+  for (int i = 0; i < loadedChunksSize; i++) {
+    if (loadedChunks[i] == NULL) {
+      continue;
+    }
+
+    // Free chunk outside loaded area
+    if (loadedChunks[i]->x < minChunkX || loadedChunks[i]->z < minChunkZ ||
+        loadedChunks[i]->z > maxChunkX || loadedChunks[i]->z > maxChunkZ) {
+      printf("Chunk: (%d, %d) unloaded\n", loadedChunks[i]->x,
+             loadedChunks[i]->z);
+      DestroyChunk(&loadedChunks[i]);
+    }
+  }
 }

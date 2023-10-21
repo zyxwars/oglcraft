@@ -18,6 +18,10 @@
 #include "Shader.h"
 #include "Chunk.h"
 #include "Camera.h"
+// #include "Text.h"
+
+// #define _CRTDBG_MAP_ALLOC
+// #include<crtdbg.h>
 
 int main(void) {
   // Init glfw
@@ -50,6 +54,9 @@ int main(void) {
   CALL_GL(glEnable(GL_CULL_FACE));
   CALL_GL(glEnable(GL_DEPTH_TEST));
 
+  CALL_GL(glEnable(GL_BLEND));
+  CALL_GL(glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA));
+
   int textureWidth, textureHeight, nrChannels;
   unsigned char* textureData = stbi_load(
       "C:/Users/Zyxwa/Documents/code/oglc/src/assets/texture_atlas.jpg",
@@ -58,10 +65,12 @@ int main(void) {
     LOG("Texture", "Couldn't load texture from file");
   }
 
+  // single vao for the whole app
   GLuint vao;
   CALL_GL(glGenVertexArrays(1, &vao));
   CALL_GL(glBindVertexArray(vao));
 
+  // TODO: bind in loop
   GLuint texture;
   CALL_GL(glGenTextures(1, &texture));
   CALL_GL(glActiveTexture(GL_TEXTURE0));
@@ -78,13 +87,9 @@ int main(void) {
   CALL_GL(glGenerateMipmap(GL_TEXTURE_2D));
   stbi_image_free(textureData);
 
-  GLuint shaderProgram = CreateShaderProgram(
+  GLuint chunkShaderProgram = CreateShaderProgram(
       "C:/Users/Zyxwa/Documents/code/oglc/src/shaders/shader.vert",
       "C:/Users/Zyxwa/Documents/code/oglc/src/shaders/shader.frag");
-  CALL_GL(glUseProgram(shaderProgram));
-
-  CALL_GL(GLint MVPUniformLocation =
-              glGetUniformLocation(shaderProgram, "u_MVP"));
 
   struct Camera* camera = CreateCamera();
 
@@ -95,12 +100,14 @@ int main(void) {
   fnl_state noise = fnlCreateState();
   noise.noise_type = FNL_NOISE_OPENSIMPLEX2;
 
-  // Create chunk data
-  unsigned int* chunkData = CreateChunk(&noise, 0, 0);
+  int renderDistance = 8;
+  int visibleChunkCount = (int)pow(renderDistance + 1, 2);
+  int maxLoadedChunks = visibleChunkCount * 2;
 
-  // Create chunk mesh
-  // This needs to be updated on every change
-  int numOfFaces = CreateChunkMesh(chunkData);
+  int chunkCount = 0;
+  // TODO: free this and free chunks at program exit
+  int loadedChunksSize = maxLoadedChunks;
+  struct Chunk** loadedChunks = calloc(maxLoadedChunks, sizeof(struct Chunk*));
 
   // Render loop
   while (!glfwWindowShouldClose(window)) {
@@ -130,27 +137,54 @@ int main(void) {
     MoveCamera((float)mouseX, (float)mouseY, verticalInput, horizontalInput,
                deltaTimeS, camera);
 
-    mat4 mvp;
-
     // Fog color
     CALL_GL(glClearColor(0.8f, 0.9f, 1.f, 1.f));
     CALL_GL(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
 
-    // position chunk
-    mat4 model = GLM_MAT4_IDENTITY_INIT;
-    glm_translate(model, (vec3){0, 0, 0});
-    glm_mat4_mulN(
-        (mat4*[]){&(camera->projectionMatrix), &(camera->viewMatrix), &model},
-        3, mvp);
+    // model matrix is not used since chunks are static
+    // use the same mvp for all chunks
+    mat4 mvp;
+    glm_mat4_mulN((mat4*[]){&(camera->projectionMatrix), &(camera->viewMatrix)},
+                  2, mvp);
 
-    // draw chunk
+    // Bind shader
+    CALL_GL(glUseProgram(chunkShaderProgram));
+
+    CALL_GL(GLint MVPUniformLocation =
+                glGetUniformLocation(chunkShaderProgram, "u_MVP"));
     CALL_GL(glUniformMatrix4fv(MVPUniformLocation, 1, GL_FALSE, mvp[0]));
-    CALL_GL(glDrawElements(GL_TRIANGLES, numOfFaces * 6, GL_UNSIGNED_INT, 0));
+
+    int playerChunkX =
+        (int)floor(camera->transform.translation[0] / CHUNK_LENGTH);
+    int playerChunkZ =
+        (int)floor(camera->transform.translation[2] / CHUNK_LENGTH);
+
+    for (int x = -renderDistance / 2; x <= renderDistance / 2; x++) {
+      for (int z = -renderDistance / 2; z <= renderDistance / 2; z++) {
+        struct Chunk* chunk = GetChunk(x + playerChunkX, z + playerChunkZ,
+                                       loadedChunks, loadedChunksSize, &noise);
+        // free space for new chunks
+        // TODO: if loading too fast this leaves holes unloaded
+        if (chunk == NULL) {
+          UnloadChunks(playerChunkX - renderDistance / 2,
+                       playerChunkZ - renderDistance / 2,
+                       playerChunkX + renderDistance / 2,
+                       playerChunkZ + renderDistance / 2, loadedChunks,
+                       loadedChunksSize);
+          continue;
+        }
+
+        DrawChunk(chunk);
+      }
+    }
+
     glfwSwapBuffers(window);
 
     glfwPollEvents();
   }
 
   glfwTerminate();
+
+  //_CrtDumpMemoryLeaks();
   return 0;
 }
