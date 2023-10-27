@@ -34,5 +34,5 @@ void main(){
     vec4 tex = texture(texture1, outTexCoords);
 
     vec3 color = tex.xyz * (diffuse + ambient);
-    FragColor = vec4(mix(color, fogColor, depth), 1);
+    FragColor = vec4(mix(color, fogColor, depth), tex.a);
 }

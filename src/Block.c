@@ -9,117 +9,143 @@ enum BlockFace {
   BLOCK_FACE_RIGHT,
 };
 
-void AddFaceToBuffer(enum BlockFace blockFace, int worldX, int worldY,
-                     int worldZ, int* currentFaceIndex, struct Vertex* vertices,
-                     unsigned int* triangles) {
-  const static struct Vertex frontFace[] = {
+// TODO: remove hardcoded width and height
+// Get center of texel to avoid bleeding
+float GetTexelX(int x) { return ((x + 0.5f) / 32.f); };
+float GetTexelY(int y) { return ((y + 0.5f) / 16.f); };
+
+void AddFaceToBuffer(unsigned int blockType, enum BlockFace blockFace,
+                     int worldX, int worldY, int worldZ, int* currentFaceIndex,
+                     struct Vertex* vertices, unsigned int* triangles) {
+  int uvs[4][2];
+  if (blockType == 1) {
+    uvs[0][0] = 0;
+    uvs[0][1] = 0;
+    uvs[1][0] = 15;
+    uvs[1][1] = 0;
+    uvs[2][0] = 15;
+    uvs[2][1] = 16;
+    uvs[3][0] = 0;
+    uvs[3][1] = 16;
+  } else if (blockType == 2) {
+    uvs[0][0] = 16;
+    uvs[0][1] = 16;
+    uvs[1][0] = 31;
+    uvs[1][1] = 16;
+    uvs[2][0] = 31;
+    uvs[2][1] = 16;
+    uvs[3][0] = 16;
+    uvs[3][1] = 16;
+  }
+
+  const struct Vertex frontFace[] = {
       {{-0.5f, -0.5f, 0.5f},
        {0.f, 1.f, 0.f},
        {0.f, 0.f, 1.f},
-       {GET_TEXEL_X(16), GET_TEXEL_Y(15)}},
+       {GetTexelX(uvs[0][0]), GetTexelY(uvs[0][1])}},
       {{-0.5f, 0.5f, 0.5f},
        {0.f, 1.f, 0.f},
        {0.f, 0.f, 1.f},
-       {GET_TEXEL_X(16), GET_TEXEL_Y(0)}},
+       {GetTexelX(uvs[1][0]), GetTexelY(uvs[1][1])}},
       {{0.5f, 0.5f, 0.5f},
        {0.f, 1.f, 0.f},
        {0.f, 0.f, 1.f},
-       {GET_TEXEL_X(31), GET_TEXEL_Y(0)}},
+       {GetTexelX(uvs[2][0]), GetTexelY(uvs[2][1])}},
       {{0.5f, -0.5f, 0.5f},
        {0.f, 1.f, 0.f},
        {0.f, 0.f, 1.f},
-       {GET_TEXEL_X(31), GET_TEXEL_Y(15)}},
+       {GetTexelX(uvs[3][0]), GetTexelY(uvs[3][1])}},
   };
-  const static struct Vertex backFace[] = {
+  const struct Vertex backFace[] = {
       {{-0.5f, -0.5f, -0.5f},
        {0.f, 1.f, 0.f},
        {0.f, 0.f, -1.f},
-       {GET_TEXEL_X(16), GET_TEXEL_Y(15)}},
+       {GetTexelX(uvs[0][0]), GetTexelY(uvs[0][1])}},
       {{-0.5f, 0.5f, -0.5f},
        {0.f, 1.f, 0.f},
        {0.f, 0.f, -1.f},
-       {GET_TEXEL_X(16), GET_TEXEL_Y(0)}},
+       {GetTexelX(uvs[1][0]), GetTexelY(uvs[1][1])}},
       {{0.5f, 0.5f, -0.5f},
        {0.f, 1.f, 0.f},
        {0.f, 0.f, -1.f},
-       {GET_TEXEL_X(31), GET_TEXEL_Y(0)}},
+       {GetTexelX(uvs[2][0]), GetTexelY(uvs[2][1])}},
       {{0.5f, -0.5f, -0.5f},
        {0.f, 1.f, 0.f},
        {0.f, 0.f, -1.f},
-       {GET_TEXEL_X(31), GET_TEXEL_Y(15)}},
+       {GetTexelX(uvs[3][0]), GetTexelY(uvs[3][1])}},
   };
-  const static struct Vertex topFace[] = {
+  const struct Vertex topFace[] = {
       {{-0.5f, 0.5f, 0.5f},
        {0.f, 1.f, 0.f},
        {0.f, 1.f, 0.f},
-       {GET_TEXEL_X(0), GET_TEXEL_Y(15)}},
+       {GetTexelX(uvs[0][0]), GetTexelY(uvs[0][1])}},
       {{-0.5f, 0.5f, -0.5f},
        {0.f, 1.f, 0.f},
        {0.f, 1.f, 0.f},
-       {GET_TEXEL_X(0), GET_TEXEL_Y(0)}},
+       {GetTexelX(uvs[1][0]), GetTexelY(uvs[1][1])}},
       {{0.5f, 0.5f, -0.5f},
        {0.f, 1.f, 0.f},
        {0.f, 1.f, 0.f},
-       {GET_TEXEL_X(15), GET_TEXEL_Y(0)}},
+       {GetTexelX(uvs[2][0]), GetTexelY(uvs[2][1])}},
       {{0.5f, 0.5f, 0.5f},
        {0.f, 1.f, 0.f},
        {0.f, 1.f, 0.f},
-       {GET_TEXEL_X(15), GET_TEXEL_Y(15)}},
+       {GetTexelX(uvs[3][0]), GetTexelY(uvs[3][1])}},
 
   };
-  const static struct Vertex bottomFace[] = {
+  const struct Vertex bottomFace[] = {
       {{-0.5f, -0.5f, 0.5f},
        {0.f, 1.f, 0.f},
        {0.f, -1.f, 0.f},
-       {GET_TEXEL_X(16), GET_TEXEL_Y(15)}},
+       {GetTexelX(uvs[0][0]), GetTexelY(uvs[0][1])}},
       {{-0.5f, -0.5f, -0.5f},
        {0.f, 1.f, 0.f},
        {0.f, -1.f, 0.f},
-       {GET_TEXEL_X(16), GET_TEXEL_Y(0)}},
+       {GetTexelX(uvs[1][0]), GetTexelY(uvs[1][1])}},
       {{0.5f, -0.5f, -0.5f},
        {0.f, 1.f, 0.f},
        {0.f, -1.f, 0.f},
-       {GET_TEXEL_X(31), GET_TEXEL_Y(0)}},
+       {GetTexelX(uvs[2][0]), GetTexelY(uvs[2][1])}},
       {{0.5f, -0.5f, 0.5f},
        {0.f, 1.f, 0.f},
        {0.f, -1.f, 0.f},
-       {GET_TEXEL_X(31), GET_TEXEL_Y(15)}},
+       {GetTexelX(uvs[3][0]), GetTexelY(uvs[3][1])}},
   };
-  const static struct Vertex leftFace[] = {
+  const struct Vertex leftFace[] = {
       {{-0.5f, -0.5f, -0.5f},
        {0.f, 1.f, 0.f},
        {1.f, 0.f, 0.f},
-       {GET_TEXEL_X(16), GET_TEXEL_Y(15)}},
+       {GetTexelX(uvs[0][0]), GetTexelY(uvs[0][1])}},
       {{-0.5f, 0.5f, -0.5f},
        {0.f, 1.f, 0.f},
        {1.f, 0.f, 0.f},
-       {GET_TEXEL_X(16), GET_TEXEL_Y(0)}},
+       {GetTexelX(uvs[1][0]), GetTexelY(uvs[1][1])}},
       {{-0.5f, 0.5f, 0.5f},
        {0.f, 1.f, 0.f},
        {1.f, 0.f, 0.f},
-       {GET_TEXEL_X(31), GET_TEXEL_Y(0)}},
+       {GetTexelX(uvs[2][0]), GetTexelY(uvs[2][1])}},
       {{-0.5f, -0.5f, 0.5f},
        {0.f, 1.f, 0.f},
        {1.f, 0.f, 0.f},
-       {GET_TEXEL_X(31), GET_TEXEL_Y(15)}},
+       {GetTexelX(uvs[3][0]), GetTexelY(uvs[3][1])}},
   };
-  const static struct Vertex rightFace[] = {
+  const struct Vertex rightFace[] = {
       {{0.5f, -0.5f, -0.5f},
        {0.f, 1.f, 0.f},
        {-1.f, 0.f, 0.f},
-       {GET_TEXEL_X(16), GET_TEXEL_Y(15)}},
+       {GetTexelX(uvs[0][0]), GetTexelY(uvs[0][1])}},
       {{0.5f, 0.5f, -0.5f},
        {0.f, 1.f, 0.f},
        {-1.f, 0.f, 0.f},
-       {GET_TEXEL_X(16), GET_TEXEL_Y(0)}},
+       {GetTexelX(uvs[1][0]), GetTexelY(uvs[1][1])}},
       {{0.5f, 0.5f, 0.5f},
        {0.f, 1.f, 0.f},
        {-1.f, 0.f, 0.f},
-       {GET_TEXEL_X(31), GET_TEXEL_Y(0)}},
+       {GetTexelX(uvs[2][0]), GetTexelY(uvs[2][1])}},
       {{0.5f, -0.5f, 0.5f},
        {0.f, 1.f, 0.f},
        {-1.f, 0.f, 0.f},
-       {GET_TEXEL_X(31), GET_TEXEL_Y(15)}},
+       {GetTexelX(uvs[3][0]), GetTexelY(uvs[3][1])}},
   };
 
   const struct Vertex* pFaceToCopy = NULL;
@@ -222,29 +248,30 @@ void AddBlockToBuffer(unsigned int* chunkData, int x, int y, int z, int worldX,
   // TODO: create visible faces
   // Left expression should be evaluated first and skip all others to avoid
   // index out of range
-  if (y + 1 == CHUNK_HEIGHT || chunkData[PosToIndex(x, y + 1, z)] == 0) {
+  // TODO: fix check != 1, since now only water, air and solid exist
+  if (y + 1 == CHUNK_HEIGHT || chunkData[PosToIndex(x, y + 1, z)] != 1) {
     // Adds face to the buffer and incremenets faceIndex
-    AddFaceToBuffer(BLOCK_FACE_TOP, worldX, y, worldZ, currentFaceIndex,
-                    vertices, triangles);
+    AddFaceToBuffer(chunkData[PosToIndex(x, y, z)], BLOCK_FACE_TOP, worldX, y,
+                    worldZ, currentFaceIndex, vertices, triangles);
   }
-  if (y - 1 == -1 || chunkData[PosToIndex(x, y - 1, z)] == 0) {
-    AddFaceToBuffer(BLOCK_FACE_BOTTOM, worldX, y, worldZ, currentFaceIndex,
-                    vertices, triangles);
+  if (y - 1 == -1 || chunkData[PosToIndex(x, y - 1, z)] != 1) {
+    AddFaceToBuffer(chunkData[PosToIndex(x, y, z)], BLOCK_FACE_BOTTOM, worldX,
+                    y, worldZ, currentFaceIndex, vertices, triangles);
   }
-  if (x + 1 == CHUNK_LENGTH || chunkData[PosToIndex(x + 1, y, z)] == 0) {
-    AddFaceToBuffer(BLOCK_FACE_RIGHT, worldX, y, worldZ, currentFaceIndex,
-                    vertices, triangles);
+  if (x + 1 == CHUNK_LENGTH || chunkData[PosToIndex(x + 1, y, z)] != 1) {
+    AddFaceToBuffer(chunkData[PosToIndex(x, y, z)], BLOCK_FACE_RIGHT, worldX, y,
+                    worldZ, currentFaceIndex, vertices, triangles);
   }
-  if (x - 1 == -1 || chunkData[PosToIndex(x - 1, y, z)] == 0) {
-    AddFaceToBuffer(BLOCK_FACE_LEFT, worldX, y, worldZ, currentFaceIndex,
-                    vertices, triangles);
+  if (x - 1 == -1 || chunkData[PosToIndex(x - 1, y, z)] != 1) {
+    AddFaceToBuffer(chunkData[PosToIndex(x, y, z)], BLOCK_FACE_LEFT, worldX, y,
+                    worldZ, currentFaceIndex, vertices, triangles);
   }
-  if (z + 1 == CHUNK_LENGTH || chunkData[PosToIndex(x, y, z + 1)] == 0) {
-    AddFaceToBuffer(BLOCK_FACE_FRONT, worldX, y, worldZ, currentFaceIndex,
-                    vertices, triangles);
+  if (z + 1 == CHUNK_LENGTH || chunkData[PosToIndex(x, y, z + 1)] != 1) {
+    AddFaceToBuffer(chunkData[PosToIndex(x, y, z)], BLOCK_FACE_FRONT, worldX, y,
+                    worldZ, currentFaceIndex, vertices, triangles);
   }
-  if (z - 1 == -1 || chunkData[PosToIndex(x, y, z - 1)] == 0) {
-    AddFaceToBuffer(BLOCK_FACE_BACK, worldX, y, worldZ, currentFaceIndex,
-                    vertices, triangles);
+  if (z - 1 == -1 || chunkData[PosToIndex(x, y, z - 1)] != 1) {
+    AddFaceToBuffer(chunkData[PosToIndex(x, y, z)], BLOCK_FACE_BACK, worldX, y,
+                    worldZ, currentFaceIndex, vertices, triangles);
   }
 }

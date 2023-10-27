@@ -21,7 +21,7 @@
 struct Chunk {
   int x, z;
   unsigned int blockData[CHUNK_VOLUME];
-  int numOfFaces;
+  int faceCount;
   GLuint vbo;
   GLuint ebo;
 };

@@ -59,7 +59,7 @@ int main(void) {
 
   int textureWidth, textureHeight, nrChannels;
   unsigned char* textureData = stbi_load(
-      "C:/Users/Zyxwa/Documents/code/oglc/src/assets/texture_atlas.jpg",
+      "C:/Users/Zyxwa/Documents/code/oglc/src/assets/texture_atlas.png",
       &textureWidth, &textureHeight, &nrChannels, 0);
   if (textureData == NULL) {
     LOG("Texture", "Couldn't load texture from file");
@@ -82,8 +82,8 @@ int main(void) {
                           GL_LINEAR_MIPMAP_NEAREST));
   CALL_GL(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST));
 
-  CALL_GL(glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, textureWidth, textureHeight, 0,
-                       GL_RGB, GL_UNSIGNED_BYTE, textureData));
+  CALL_GL(glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, textureWidth, textureHeight,
+                       0, GL_RGBA, GL_UNSIGNED_BYTE, textureData));
   CALL_GL(glGenerateMipmap(GL_TEXTURE_2D));
   stbi_image_free(textureData);
 
@@ -101,7 +101,7 @@ int main(void) {
   noise.noise_type = FNL_NOISE_OPENSIMPLEX2;
 
   int renderDistance = 8;
-  int visibleChunkCount = (int)pow(renderDistance + 1, 2);
+  int visibleChunkCount = (int)pow(renderDistance * 2 + 1, 2);
   int maxLoadedChunks = visibleChunkCount * 2;
 
   int chunkCount = 0;
@@ -159,18 +159,17 @@ int main(void) {
     int playerChunkZ =
         (int)floor(camera->transform.translation[2] / CHUNK_LENGTH);
 
-    for (int x = -renderDistance / 2; x <= renderDistance / 2; x++) {
-      for (int z = -renderDistance / 2; z <= renderDistance / 2; z++) {
+    for (int x = -renderDistance; x <= renderDistance; x++) {
+      for (int z = -renderDistance; z <= renderDistance; z++) {
         struct Chunk* chunk = GetChunk(x + playerChunkX, z + playerChunkZ,
                                        loadedChunks, loadedChunksSize, &noise);
         // free space for new chunks
         // TODO: if loading too fast this leaves holes unloaded
         if (chunk == NULL) {
-          UnloadChunks(playerChunkX - renderDistance / 2,
-                       playerChunkZ - renderDistance / 2,
-                       playerChunkX + renderDistance / 2,
-                       playerChunkZ + renderDistance / 2, loadedChunks,
-                       loadedChunksSize);
+          UnloadChunks(
+              playerChunkX - renderDistance, playerChunkZ - renderDistance,
+              playerChunkX + renderDistance, playerChunkZ + renderDistance,
+              loadedChunks, loadedChunksSize);
           continue;
         }
 

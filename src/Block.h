@@ -12,12 +12,6 @@
 #include "GlWrapper.h"
 #include "Chunk.h"
 
-// TODO: remove hardcoded width and height
-// Get center of texel to avoid bleeding
-#define GET_TEXEL_X(x) ((x + 0.5f) / 32.f)
-
-#define GET_TEXEL_Y(y) ((y + 0.5f) / 16.f)
-
 struct Vertex {
   vec3 position;
   vec3 color;

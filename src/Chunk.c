@@ -43,7 +43,7 @@ void CreateChunkMesh(struct Chunk* chunk) {
   vertices = NULL;
   triangles = NULL;
 
-  chunk->numOfFaces = currentFaceIndex;
+  chunk->faceCount = currentFaceIndex;
 }
 
 struct Chunk* CreateChunk(fnl_state* noiseState, int chunkX, int chunkZ) {
@@ -68,17 +68,23 @@ struct Chunk* CreateChunk(fnl_state* noiseState, int chunkX, int chunkZ) {
     }
   }
 
+  // Fill in water
+  int waterHeight = 10;
+  for (int y = 0; y < waterHeight; y++) {
+    for (int x = 0; x < CHUNK_LENGTH; x++) {
+      for (int z = 0; z < CHUNK_LENGTH; z++) {
+        // Fill air blocks with water
+        if (chunk->blockData[PosToIndex(x, y, z)] == 0) {
+          chunk->blockData[PosToIndex(x, y, z)] = 2;
+        }
+      }
+    }
+  }
+
   CreateChunkMesh(chunk);
 
   return chunk;
 };
-
-void DestroyChunk(struct Chunk** chunk) {
-  CALL_GL(glDeleteBuffers(1, &(*chunk)->vbo));
-  CALL_GL(glDeleteBuffers(1, &(*chunk)->ebo));
-  free(*chunk);
-  *chunk = NULL;
-}
 
 void DrawChunk(struct Chunk* chunk) {
   CALL_GL(glBindBuffer(GL_ARRAY_BUFFER, chunk->vbo));
@@ -103,7 +109,14 @@ void DrawChunk(struct Chunk* chunk) {
                                 (void*)offsetof(struct Vertex, texCoords)));
 
   CALL_GL(
-      glDrawElements(GL_TRIANGLES, chunk->numOfFaces * 6, GL_UNSIGNED_INT, 0));
+      glDrawElements(GL_TRIANGLES, chunk->faceCount * 6, GL_UNSIGNED_INT, 0));
+}
+
+void DestroyChunk(struct Chunk** chunk) {
+  CALL_GL(glDeleteBuffers(1, &(*chunk)->vbo));
+  CALL_GL(glDeleteBuffers(1, &(*chunk)->ebo));
+  free(*chunk);
+  *chunk = NULL;
 }
 
 struct Chunk* GetChunk(int x, int z, struct Chunk** loadedChunks,
@@ -130,7 +143,7 @@ struct Chunk* GetChunk(int x, int z, struct Chunk** loadedChunks,
 
   // Create chunk
   struct Chunk* chunk = CreateChunk(noiseState, x, z);
-  printf("Chunk: (%d, %d) created\n", x, z);
+  printf("Chunk: (%d, %d) created\n", chunk->x, chunk->z);
   loadedChunks[emptyIndex] = chunk;
 
   return chunk;
@@ -144,10 +157,8 @@ void UnloadChunks(int minChunkX, int minChunkZ, int maxChunkX, int maxChunkZ,
     }
 
     // Free chunk outside loaded area
-    if (loadedChunks[i]->x < minChunkX || loadedChunks[i]->z < minChunkZ ||
-        loadedChunks[i]->z > maxChunkX || loadedChunks[i]->z > maxChunkZ) {
-      printf("Chunk: (%d, %d) unloaded\n", loadedChunks[i]->x,
-             loadedChunks[i]->z);
+    if (loadedChunks[i]->x < minChunkX || loadedChunks[i]->x > maxChunkX ||
+        loadedChunks[i]->z < minChunkZ || loadedChunks[i]->z > maxChunkZ) {
       DestroyChunk(&loadedChunks[i]);
     }
   }
