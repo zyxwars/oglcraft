@@ -154,6 +154,10 @@ int main(void) {
                 glGetUniformLocation(chunkShaderProgram, "u_MVP"));
     CALL_GL(glUniformMatrix4fv(MVPUniformLocation, 1, GL_FALSE, mvp[0]));
 
+    CALL_GL(GLint timeUniform =
+                glGetUniformLocation(chunkShaderProgram, "u_TimeS"));
+    CALL_GL(glUniform1f(timeUniform, currentTimeS));
+
     int playerChunkX =
         (int)floor(camera->transform.translation[0] / CHUNK_LENGTH);
     int playerChunkZ =
@@ -180,10 +184,16 @@ int main(void) {
         // DrawBlocks(chunk);
       }
     }
+    CALL_GL(GLint isWaterUniform =
+                glGetUniformLocation(chunkShaderProgram, "u_IsWater"));
+    CALL_GL(glUniform1i(isWaterUniform, 0));
 
     for (int i = 0; i < chunksToRenderIndex; i++) {
       DrawBlocks(chunksToRender[i]);
     }
+
+    CALL_GL(glUniform1i(isWaterUniform, 1));
+
     for (int i = 0; i < chunksToRenderIndex; i++) {
       DrawWater(chunksToRender[i]);
     }
