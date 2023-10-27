@@ -58,9 +58,9 @@ int main(void) {
   CALL_GL(glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA));
 
   int textureWidth, textureHeight, nrChannels;
-  unsigned char* textureData = stbi_load(
-      "C:/Users/Zyxwa/Documents/code/oglc/src/assets/texture_atlas.png",
-      &textureWidth, &textureHeight, &nrChannels, 0);
+  unsigned char* textureData =
+      stbi_load("C:/Users/Zyxwa/Documents/code/oglc/src/assets/terrain.png",
+                &textureWidth, &textureHeight, &nrChannels, 0);
   if (textureData == NULL) {
     LOG("Texture", "Couldn't load texture from file");
   }
@@ -159,6 +159,9 @@ int main(void) {
     int playerChunkZ =
         (int)floor(camera->transform.translation[2] / CHUNK_LENGTH);
 
+    int chunksToRenderIndex = 0;
+    struct Chunk** chunksToRender =
+        calloc(visibleChunkCount, sizeof(struct Chunk*));
     for (int x = -renderDistance; x <= renderDistance; x++) {
       for (int z = -renderDistance; z <= renderDistance; z++) {
         struct Chunk* chunk = GetChunk(x + playerChunkX, z + playerChunkZ,
@@ -173,9 +176,19 @@ int main(void) {
           continue;
         }
 
-        DrawChunk(chunk);
+        chunksToRender[chunksToRenderIndex++] = chunk;
+        // DrawBlocks(chunk);
       }
     }
+
+    for (int i = 0; i < chunksToRenderIndex; i++) {
+      DrawBlocks(chunksToRender[i]);
+    }
+    for (int i = 0; i < chunksToRenderIndex; i++) {
+      DrawWater(chunksToRender[i]);
+    }
+
+    free(chunksToRender);
 
     glfwSwapBuffers(window);
 

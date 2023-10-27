@@ -18,12 +18,18 @@
 #define CHUNK_PLANE_AREA (CHUNK_LENGTH * CHUNK_LENGTH)
 #define CHUNK_VOLUME (CHUNK_PLANE_AREA * CHUNK_HEIGHT)
 
-struct Chunk {
-  int x, z;
-  unsigned int blockData[CHUNK_VOLUME];
-  int faceCount;
+struct Mesh {
   GLuint vbo;
   GLuint ebo;
+};
+
+struct Chunk {
+  int x, z;
+  unsigned int blocks[CHUNK_VOLUME];
+  struct Mesh blockMesh;
+  int blockFaceCount;
+  struct Mesh waterMesh;
+  int waterBlockFaceCount;
 };
 
 // TODO: move to utils or something more general
@@ -33,7 +39,9 @@ struct Chunk* CreateChunk(fnl_state* noiseState, int x, int z);
 
 void DestroyChunk(struct Chunk** chunk);
 
-void DrawChunk(struct Chunk* chunk);
+void DrawBlocks(struct Chunk* chunk);
+
+void DrawWater(struct Chunk* chunk);
 
 struct Chunk* GetChunk(int x, int z, struct Chunk** loadedChunks,
                        int loadedChunksSize, fnl_state* noiseState);

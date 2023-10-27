@@ -12,6 +12,13 @@
 #include "GlWrapper.h"
 #include "Chunk.h"
 
+struct Block {
+  // front back top bottom left right
+  ivec2 texCoord[6];
+  int isOpaque;
+  int isTranslucent;
+};
+
 struct Vertex {
   vec3 position;
   vec3 color;
@@ -19,6 +26,13 @@ struct Vertex {
   vec2 texCoords;
 };
 
-void AddBlockToBuffer(unsigned int* chunkData, int x, int y, int z, int worldX,
+int IsOpaque(unsigned int blockId);
+int IsWater(unsigned int blockId);
+
+void AddToBlockBuffer(unsigned int* chunkData, int x, int y, int z, int worldX,
+                      int worldZ, int* currentFaceIndex,
+                      struct Vertex* vertices, unsigned int* triangles);
+
+void AddToWaterBuffer(unsigned int* chunkData, int x, int y, int z, int worldX,
                       int worldZ, int* currentFaceIndex,
                       struct Vertex* vertices, unsigned int* triangles);
