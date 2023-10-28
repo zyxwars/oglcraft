@@ -37,7 +37,10 @@ struct Camera* CreateCamera() {
   camera->movementSpeed = 7.5f;
   camera->mouseSens = 0.01f;
 
-  glm_perspective(45.f, 640.f / 480.f, 1.f, 1000.f, camera->projectionMatrix);
+  // TODO: base clipping on render distance
+  // TODO: also adjust in shader
+  glm_perspective(45.f, 640.f / 480.f, 1.f, 8.f * 16.f,
+                  camera->projectionMatrix);
 
   // TODO: set in transform initializer ?
   // The position vectors get updated with each translation and rotation,

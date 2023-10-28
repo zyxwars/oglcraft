@@ -14,15 +14,45 @@ const int blockSize = 16;
 const float AtlasW = 256.f;
 const float AtlasH = 256.f;
 
+// enum BlockId {
+//   BLOCK_AIR,
+//   BLOCK_GRASS,
+//   BLOCK_WATER,
+//   BLOCK_DIRT,
+//   BLOCK_OAK_LOG,
+//   BLOCK_LEAVES
+// };
+
+// struct Block {
+//   // front back top bottom left right
+//   ivec2 texCoord[6];
+//   // Which buffer the object belongs to
+//   int isOpaque;
+//   int isTranslucent;
+//   // Object is opaque but parts are fully transparent
+//   int isCutout;
+//   // Whether two same blocks next to each other will render their touching
+//   faces
+//   // i.e. leaves, chests will, glass won't
+//   int isSelfCulled;
+// };
+
 // TODO: Read in json
 // TODO: create on runtime
 const struct Block BlockTypes[] = {
-    {0},
-    {{{3, 0}, {3, 0}, {0, 0}, {3, 0}, {3, 0}, {3, 0}}, 1, 0},
-    {{{13, 12}, {13, 12}, {13, 12}, {13, 12}, {13, 12}, {13, 12}}, 0, 1},
-    {{{2, 0}, {2, 0}, {2, 0}, {2, 0}, {2, 0}, {2, 0}}, 1, 0},
-    {{{4, 1}, {4, 1}, {5, 1}, {4, 1}, {4, 1}, {4, 1}}, 1, 0},
-    {{{4, 3}, {4, 3}, {4, 3}, {4, 3}, {4, 3}, {4, 3}}, 0, 1},
+    // air
+    // TODO: air defined as a cutout to make things easier
+    {{0}, 0, 0, 1, 0},
+    // grass
+    {{{3, 0}, {3, 0}, {0, 0}, {3, 0}, {3, 0}, {3, 0}}, 1, 0, 0, 1},
+    // water
+    {{{13, 12}, {13, 12}, {13, 12}, {13, 12}, {13, 12}, {13, 12}}, 0, 1, 0, 1},
+    // dirt
+    {{{2, 0}, {2, 0}, {2, 0}, {2, 0}, {2, 0}, {2, 0}}, 1, 0, 0, 1},
+    // oak log
+    {{{4, 1}, {4, 1}, {5, 1}, {4, 1}, {4, 1}, {4, 1}}, 1, 0, 0, 1},
+    // leaves
+    {{{4, 3}, {4, 3}, {4, 3}, {4, 3}, {4, 3}, {4, 3}}, 1, 0, 1, 0},
 };
 
 // TODO: remove hardcoded width and height
@@ -254,89 +284,114 @@ void AddFaceToBuffer(unsigned int blockId, enum BlockFace blockFace, int worldX,
   (*currentFaceIndex)++;
 }
 
-void AddToBlockBuffer(unsigned int* chunkData, int x, int y, int z, int worldX,
-                      int worldZ, int* currentFaceIndex,
-                      struct Vertex* vertices, unsigned int* triangles) {
-  // Check block type
-  if (!BlockTypes[chunkData[PosToIndex(x, y, z)]].isOpaque) {
+void AddToOpaqueBuffer(unsigned int* chunkData, int x, int y, int z, int worldX,
+                       int worldZ, int* currentFaceIndex,
+                       struct Vertex* vertices, unsigned int* triangles) {
+  int blockId = chunkData[PosToIndex(x, y, z)];
+
+  // Only process opaque blocks
+  if (!BlockTypes[blockId].isOpaque) {
     return;
   }
 
-  // TODO: create visible faces
-  // Left expression should be evaluated first and skip all others to avoid
-  // index out of range
-  // TODO: fix check != 1, since now only water, air and solid exist
-  if (y + 1 == CHUNK_HEIGHT ||
-      !BlockTypes[chunkData[PosToIndex(x, y + 1, z)]].isOpaque) {
-    // Adds face to the buffer and incremenets faceIndex
-    AddFaceToBuffer(chunkData[PosToIndex(x, y, z)], BLOCK_FACE_TOP, worldX, y,
-                    worldZ, currentFaceIndex, vertices, triangles);
-  }
-  if (y - 1 == -1 || !BlockTypes[chunkData[PosToIndex(x, y - 1, z)]].isOpaque) {
-    AddFaceToBuffer(chunkData[PosToIndex(x, y, z)], BLOCK_FACE_BOTTOM, worldX,
-                    y, worldZ, currentFaceIndex, vertices, triangles);
-  }
-  if (x + 1 == CHUNK_LENGTH ||
-      !BlockTypes[chunkData[PosToIndex(x + 1, y, z)]].isOpaque) {
-    AddFaceToBuffer(chunkData[PosToIndex(x, y, z)], BLOCK_FACE_RIGHT, worldX, y,
-                    worldZ, currentFaceIndex, vertices, triangles);
-  }
-  if (x - 1 == -1 || !BlockTypes[chunkData[PosToIndex(x - 1, y, z)]].isOpaque) {
-    AddFaceToBuffer(chunkData[PosToIndex(x, y, z)], BLOCK_FACE_LEFT, worldX, y,
-                    worldZ, currentFaceIndex, vertices, triangles);
-  }
-  if (z + 1 == CHUNK_LENGTH ||
-      !BlockTypes[chunkData[PosToIndex(x, y, z + 1)]].isOpaque) {
-    AddFaceToBuffer(chunkData[PosToIndex(x, y, z)], BLOCK_FACE_FRONT, worldX, y,
-                    worldZ, currentFaceIndex, vertices, triangles);
-  }
-  if (z - 1 == -1 || !BlockTypes[chunkData[PosToIndex(x, y, z - 1)]].isOpaque) {
-    AddFaceToBuffer(chunkData[PosToIndex(x, y, z)], BLOCK_FACE_BACK, worldX, y,
-                    worldZ, currentFaceIndex, vertices, triangles);
-  }
+  // Neighbors
+  const struct Block* frontN =
+      z + 1 == CHUNK_LENGTH ? NULL
+                            : &BlockTypes[chunkData[PosToIndex(x, y, z + 1)]];
+  const struct Block* backN =
+      z == 0 ? NULL : &BlockTypes[chunkData[PosToIndex(x, y, z - 1)]];
+
+  const struct Block* topN =
+      y + 1 == CHUNK_HEIGHT ? NULL
+                            : &BlockTypes[chunkData[PosToIndex(x, y + 1, z)]];
+  const struct Block* bottomN =
+      y == 0 ? NULL : &BlockTypes[chunkData[PosToIndex(x, y - 1, z)]];
+
+  const struct Block* rightN =
+      x + 1 == CHUNK_LENGTH ? NULL
+                            : &BlockTypes[chunkData[PosToIndex(x + 1, y, z)]];
+  const struct Block* leftN =
+      x == 0 ? NULL : &BlockTypes[chunkData[PosToIndex(x - 1, y, z)]];
+
+  // If neihbor is out of range render without checking other conditions
+  // TODO: implement self culling for glass
+  if (topN == NULL || topN->isCutout || topN->isTranslucent)
+    AddFaceToBuffer(blockId, BLOCK_FACE_TOP, worldX, y, worldZ,
+                    currentFaceIndex, vertices, triangles);
+
+  if (bottomN == NULL || bottomN->isCutout || bottomN->isTranslucent)
+    AddFaceToBuffer(blockId, BLOCK_FACE_BOTTOM, worldX, y, worldZ,
+                    currentFaceIndex, vertices, triangles);
+
+  if (rightN == NULL || rightN->isCutout || rightN->isTranslucent)
+    AddFaceToBuffer(blockId, BLOCK_FACE_RIGHT, worldX, y, worldZ,
+                    currentFaceIndex, vertices, triangles);
+
+  if (leftN == NULL || leftN->isCutout || leftN->isTranslucent)
+    AddFaceToBuffer(blockId, BLOCK_FACE_LEFT, worldX, y, worldZ,
+                    currentFaceIndex, vertices, triangles);
+
+  if (frontN == NULL || frontN->isCutout || frontN->isTranslucent)
+    AddFaceToBuffer(blockId, BLOCK_FACE_FRONT, worldX, y, worldZ,
+                    currentFaceIndex, vertices, triangles);
+
+  if (backN == NULL || backN->isCutout || backN->isTranslucent)
+    AddFaceToBuffer(blockId, BLOCK_FACE_BACK, worldX, y, worldZ,
+                    currentFaceIndex, vertices, triangles);
 }
 
-void AddToWaterBuffer(unsigned int* chunkData, int x, int y, int z, int worldX,
-                      int worldZ, int* currentFaceIndex,
-                      struct Vertex* vertices, unsigned int* triangles) {
-  // Check block type
-  if (!BlockTypes[chunkData[PosToIndex(x, y, z)]].isTranslucent) {
+void AddToTranslucentBuffer(unsigned int* chunkData, int x, int y, int z,
+                            int worldX, int worldZ, int* currentFaceIndex,
+                            struct Vertex* vertices, unsigned int* triangles) {
+  int blockId = chunkData[PosToIndex(x, y, z)];
+
+  // Only process translucent blocks
+  if (!BlockTypes[blockId].isTranslucent) {
     return;
   }
-  // TODO: create visible faces
-  // Left expression should be evaluated first and skip all others to avoid
-  // index out of range
-  // TODO: fix check != 1, since now only water, air and solid exist
 
-  // if (y + 1 == CHUNK_HEIGHT ||
-  //     !BlockTypes[chunkData[PosToIndex(x, y + 1, z)]].isTranslucent) {
-  //   // Adds face to the buffer and incremenets faceIndex
-  AddFaceToBuffer(chunkData[PosToIndex(x, y, z)], BLOCK_FACE_TOP, worldX, y,
-                  worldZ, currentFaceIndex, vertices, triangles);
-  // }
-  // if (y - 1 == -1 ||
-  //     !BlockTypes[chunkData[PosToIndex(x, y - 1, z)]].isTranslucent) {
-  AddFaceToBuffer(chunkData[PosToIndex(x, y, z)], BLOCK_FACE_BOTTOM, worldX, y,
-                  worldZ, currentFaceIndex, vertices, triangles);
-  // }
-  // if (x + 1 == CHUNK_LENGTH ||
-  //     !BlockTypes[chunkData[PosToIndex(x + 1, y, z)]].isTranslucent) {
-  AddFaceToBuffer(chunkData[PosToIndex(x, y, z)], BLOCK_FACE_RIGHT, worldX, y,
-                  worldZ, currentFaceIndex, vertices, triangles);
-  // }
-  // if (x - 1 == -1 ||
-  //     !BlockTypes[chunkData[PosToIndex(x - 1, y, z)]].isTranslucent) {
-  AddFaceToBuffer(chunkData[PosToIndex(x, y, z)], BLOCK_FACE_LEFT, worldX, y,
-                  worldZ, currentFaceIndex, vertices, triangles);
-  // }
-  // if (z + 1 == CHUNK_LENGTH ||
-  //     !BlockTypes[chunkData[PosToIndex(x, y, z + 1)]].isTranslucent) {
-  AddFaceToBuffer(chunkData[PosToIndex(x, y, z)], BLOCK_FACE_FRONT, worldX, y,
-                  worldZ, currentFaceIndex, vertices, triangles);
-  // }
-  // if (z - 1 == -1 ||
-  //     !BlockTypes[chunkData[PosToIndex(x, y, z - 1)]].isTranslucent) {
-  AddFaceToBuffer(chunkData[PosToIndex(x, y, z)], BLOCK_FACE_BACK, worldX, y,
-                  worldZ, currentFaceIndex, vertices, triangles);
-  // }
+  // Neighbors
+  const struct Block* frontN =
+      z + 1 == CHUNK_LENGTH ? NULL
+                            : &BlockTypes[chunkData[PosToIndex(x, y, z + 1)]];
+  const struct Block* backN =
+      z == 0 ? NULL : &BlockTypes[chunkData[PosToIndex(x, y, z - 1)]];
+
+  const struct Block* topN =
+      y + 1 == CHUNK_HEIGHT ? NULL
+                            : &BlockTypes[chunkData[PosToIndex(x, y + 1, z)]];
+  const struct Block* bottomN =
+      y == 0 ? NULL : &BlockTypes[chunkData[PosToIndex(x, y - 1, z)]];
+
+  const struct Block* rightN =
+      x + 1 == CHUNK_LENGTH ? NULL
+                            : &BlockTypes[chunkData[PosToIndex(x + 1, y, z)]];
+  const struct Block* leftN =
+      x == 0 ? NULL : &BlockTypes[chunkData[PosToIndex(x - 1, y, z)]];
+
+  // Add only faces touching cutouts
+  // Air is a cutout for now as well
+  if (topN == NULL || topN->isCutout)
+    AddFaceToBuffer(blockId, BLOCK_FACE_TOP, worldX, y, worldZ,
+                    currentFaceIndex, vertices, triangles);
+
+  if (bottomN == NULL || bottomN->isCutout)
+    AddFaceToBuffer(blockId, BLOCK_FACE_BOTTOM, worldX, y, worldZ,
+                    currentFaceIndex, vertices, triangles);
+
+  if (rightN == NULL || rightN->isCutout)
+    AddFaceToBuffer(blockId, BLOCK_FACE_RIGHT, worldX, y, worldZ,
+                    currentFaceIndex, vertices, triangles);
+
+  if (leftN == NULL || leftN->isCutout)
+    AddFaceToBuffer(blockId, BLOCK_FACE_LEFT, worldX, y,
+
+                    worldZ, currentFaceIndex, vertices, triangles);
+  if (frontN == NULL || frontN->isCutout)
+    AddFaceToBuffer(blockId, BLOCK_FACE_FRONT, worldX, y, worldZ,
+                    currentFaceIndex, vertices, triangles);
+
+  if (backN == NULL || backN->isCutout)
+    AddFaceToBuffer(blockId, BLOCK_FACE_BACK, worldX, y, worldZ,
+                    currentFaceIndex, vertices, triangles);
 }

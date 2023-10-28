@@ -24,8 +24,14 @@ enum BlockId {
 struct Block {
   // front back top bottom left right
   ivec2 texCoord[6];
+  // Which buffer the object belongs to
   int isOpaque;
   int isTranslucent;
+  // Object is opaque but parts are fully transparent
+  int isCutout;
+  // Whether two same blocks next to each other will render their touching faces
+  // i.e. leaves, chests will, glass won't
+  int isSelfCulled;
 };
 
 struct Vertex {
@@ -35,13 +41,10 @@ struct Vertex {
   vec2 texCoords;
 };
 
-int IsOpaque(unsigned int blockId);
-int IsWater(unsigned int blockId);
+void AddToOpaqueBuffer(unsigned int* chunkData, int x, int y, int z, int worldX,
+                       int worldZ, int* currentFaceIndex,
+                       struct Vertex* vertices, unsigned int* triangles);
 
-void AddToBlockBuffer(unsigned int* chunkData, int x, int y, int z, int worldX,
-                      int worldZ, int* currentFaceIndex,
-                      struct Vertex* vertices, unsigned int* triangles);
-
-void AddToWaterBuffer(unsigned int* chunkData, int x, int y, int z, int worldX,
-                      int worldZ, int* currentFaceIndex,
-                      struct Vertex* vertices, unsigned int* triangles);
+void AddToTranslucentBuffer(unsigned int* chunkData, int x, int y, int z,
+                            int worldX, int worldZ, int* currentFaceIndex,
+                            struct Vertex* vertices, unsigned int* triangles);

@@ -8,8 +8,9 @@ in vec2 out_TexCoords;
 
 uniform sampler2D texture1;
 
-float near = 0.1f;
-float far = 5.f;
+// TODO: adjuct based on real near and far plane
+float near = 1.f;
+float far = 100.f;
 
 // TODO: what this does
 float LinearizeDepth(float depth) {

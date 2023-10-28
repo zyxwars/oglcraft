@@ -5,12 +5,12 @@ int PosToIndex(int x, int y, int z) {
 }
 
 // TODO: create update function
-void CreateBlockMesh(struct Chunk* chunk) {
-  CALL_GL(glGenBuffers(1, &(chunk->blockMesh.vbo)));
-  CALL_GL(glBindBuffer(GL_ARRAY_BUFFER, chunk->blockMesh.vbo));
+void CreateOpaqueMesh(struct Chunk* chunk) {
+  CALL_GL(glGenBuffers(1, &(chunk->opaqueMesh.vbo)));
+  CALL_GL(glBindBuffer(GL_ARRAY_BUFFER, chunk->opaqueMesh.vbo));
 
-  CALL_GL(glGenBuffers(1, &(chunk->blockMesh.ebo)));
-  CALL_GL(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, chunk->blockMesh.ebo));
+  CALL_GL(glGenBuffers(1, &(chunk->opaqueMesh.ebo)));
+  CALL_GL(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, chunk->opaqueMesh.ebo));
 
   // TODO: allocate in a less wasteful way?
   const int maxFacesInChunk = ((int)CHUNK_VOLUME * 6);
@@ -22,9 +22,9 @@ void CreateBlockMesh(struct Chunk* chunk) {
   for (int x = 0; x < CHUNK_LENGTH; x++) {
     for (int y = 0; y < CHUNK_HEIGHT; y++) {
       for (int z = 0; z < CHUNK_LENGTH; z++) {
-        AddToBlockBuffer(chunk->blocks, x, y, z, x + chunk->x * CHUNK_LENGTH,
-                         z + chunk->z * CHUNK_LENGTH, &currentFaceIndex,
-                         vertices, triangles);
+        AddToOpaqueBuffer(chunk->blocks, x, y, z, x + chunk->x * CHUNK_LENGTH,
+                          z + chunk->z * CHUNK_LENGTH, &currentFaceIndex,
+                          vertices, triangles);
       }
     }
   }
@@ -43,15 +43,15 @@ void CreateBlockMesh(struct Chunk* chunk) {
   vertices = NULL;
   triangles = NULL;
 
-  chunk->blockFaceCount = currentFaceIndex;
+  chunk->opaqueFaceCount = currentFaceIndex;
 }
 
-void CreateWaterMesh(struct Chunk* chunk) {
-  CALL_GL(glGenBuffers(1, &(chunk->waterMesh.vbo)));
-  CALL_GL(glBindBuffer(GL_ARRAY_BUFFER, chunk->waterMesh.vbo));
+void CreateTranslucentMesh(struct Chunk* chunk) {
+  CALL_GL(glGenBuffers(1, &(chunk->translucentMesh.vbo)));
+  CALL_GL(glBindBuffer(GL_ARRAY_BUFFER, chunk->translucentMesh.vbo));
 
-  CALL_GL(glGenBuffers(1, &(chunk->waterMesh.ebo)));
-  CALL_GL(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, chunk->waterMesh.ebo));
+  CALL_GL(glGenBuffers(1, &(chunk->translucentMesh.ebo)));
+  CALL_GL(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, chunk->translucentMesh.ebo));
 
   // TODO: allocate in a less wasteful way?
   const int maxFacesInChunk = ((int)CHUNK_VOLUME * 6);
@@ -63,9 +63,10 @@ void CreateWaterMesh(struct Chunk* chunk) {
   for (int x = 0; x < CHUNK_LENGTH; x++) {
     for (int y = 0; y < CHUNK_HEIGHT; y++) {
       for (int z = 0; z < CHUNK_LENGTH; z++) {
-        AddToWaterBuffer(chunk->blocks, x, y, z, x + chunk->x * CHUNK_LENGTH,
-                         z + chunk->z * CHUNK_LENGTH, &currentFaceIndex,
-                         vertices, triangles);
+        AddToTranslucentBuffer(chunk->blocks, x, y, z,
+                               x + chunk->x * CHUNK_LENGTH,
+                               z + chunk->z * CHUNK_LENGTH, &currentFaceIndex,
+                               vertices, triangles);
       }
     }
   }
@@ -84,7 +85,7 @@ void CreateWaterMesh(struct Chunk* chunk) {
   vertices = NULL;
   triangles = NULL;
 
-  chunk->waterBlockFaceCount = currentFaceIndex;
+  chunk->translucentFaceCount = currentFaceIndex;
 }
 
 struct Chunk* CreateChunk(fnl_state* noiseState, int chunkX, int chunkZ) {
@@ -227,15 +228,15 @@ struct Chunk* CreateChunk(fnl_state* noiseState, int chunkX, int chunkZ) {
     chunk->blocks[PosToIndex(treeX + -2, y + 3, treeZ - 2)] = BLOCK_LEAVES;
   }
 
-  CreateBlockMesh(chunk);
-  CreateWaterMesh(chunk);
+  CreateOpaqueMesh(chunk);
+  CreateTranslucentMesh(chunk);
 
   return chunk;
 };
 
 void DrawBlocks(struct Chunk* chunk) {
-  CALL_GL(glBindBuffer(GL_ARRAY_BUFFER, chunk->blockMesh.vbo));
-  CALL_GL(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, chunk->blockMesh.ebo));
+  CALL_GL(glBindBuffer(GL_ARRAY_BUFFER, chunk->opaqueMesh.vbo));
+  CALL_GL(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, chunk->opaqueMesh.ebo));
 
   int stride = sizeof(struct Vertex);
 
@@ -255,13 +256,13 @@ void DrawBlocks(struct Chunk* chunk) {
   CALL_GL(glVertexAttribPointer(3, 2, GL_FLOAT, GL_FALSE, stride,
                                 (void*)offsetof(struct Vertex, texCoords)));
 
-  CALL_GL(glDrawElements(GL_TRIANGLES, chunk->blockFaceCount * 6,
+  CALL_GL(glDrawElements(GL_TRIANGLES, chunk->opaqueFaceCount * 6,
                          GL_UNSIGNED_INT, 0));
 }
 
 void DrawWater(struct Chunk* chunk) {
-  CALL_GL(glBindBuffer(GL_ARRAY_BUFFER, chunk->waterMesh.vbo));
-  CALL_GL(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, chunk->waterMesh.ebo));
+  CALL_GL(glBindBuffer(GL_ARRAY_BUFFER, chunk->translucentMesh.vbo));
+  CALL_GL(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, chunk->translucentMesh.ebo));
 
   int stride = sizeof(struct Vertex);
 
@@ -281,15 +282,15 @@ void DrawWater(struct Chunk* chunk) {
   CALL_GL(glVertexAttribPointer(3, 2, GL_FLOAT, GL_FALSE, stride,
                                 (void*)offsetof(struct Vertex, texCoords)));
 
-  CALL_GL(glDrawElements(GL_TRIANGLES, chunk->waterBlockFaceCount * 6,
+  CALL_GL(glDrawElements(GL_TRIANGLES, chunk->translucentFaceCount * 6,
                          GL_UNSIGNED_INT, 0));
 };
 
 void DestroyChunk(struct Chunk** chunk) {
-  CALL_GL(glDeleteBuffers(1, &(*chunk)->blockMesh.vbo));
-  CALL_GL(glDeleteBuffers(1, &(*chunk)->blockMesh.ebo));
-  CALL_GL(glDeleteBuffers(1, &(*chunk)->waterMesh.vbo));
-  CALL_GL(glDeleteBuffers(1, &(*chunk)->waterMesh.ebo));
+  CALL_GL(glDeleteBuffers(1, &(*chunk)->opaqueMesh.vbo));
+  CALL_GL(glDeleteBuffers(1, &(*chunk)->opaqueMesh.ebo));
+  CALL_GL(glDeleteBuffers(1, &(*chunk)->translucentMesh.vbo));
+  CALL_GL(glDeleteBuffers(1, &(*chunk)->translucentMesh.ebo));
   free(*chunk);
   *chunk = NULL;
 }

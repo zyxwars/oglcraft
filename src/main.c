@@ -54,9 +54,6 @@ int main(void) {
   CALL_GL(glEnable(GL_CULL_FACE));
   CALL_GL(glEnable(GL_DEPTH_TEST));
 
-  CALL_GL(glEnable(GL_BLEND));
-  CALL_GL(glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA));
-
   int textureWidth, textureHeight, nrChannels;
   unsigned char* textureData =
       stbi_load("C:/Users/Zyxwa/Documents/code/oglc/src/assets/terrain.png",
@@ -186,6 +183,9 @@ int main(void) {
         // DrawBlocks(chunk);
       }
     }
+
+    // Only blend translucent buffer
+    CALL_GL(glDisable(GL_BLEND));
     CALL_GL(GLint isWaterUniform =
                 glGetUniformLocation(chunkShaderProgram, "u_IsWater"));
     CALL_GL(glUniform1i(isWaterUniform, 0));
@@ -194,6 +194,8 @@ int main(void) {
       DrawBlocks(chunksToRender[i]);
     }
 
+    CALL_GL(glEnable(GL_BLEND));
+    CALL_GL(glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA));
     CALL_GL(glUniform1i(isWaterUniform, 1));
 
     for (int i = 0; i < chunksToRenderIndex; i++) {

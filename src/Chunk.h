@@ -26,10 +26,10 @@ struct Mesh {
 struct Chunk {
   int x, z;
   unsigned int blocks[CHUNK_VOLUME];
-  struct Mesh blockMesh;
-  int blockFaceCount;
-  struct Mesh waterMesh;
-  int waterBlockFaceCount;
+  struct Mesh opaqueMesh;
+  int opaqueFaceCount;
+  struct Mesh translucentMesh;
+  int translucentFaceCount;
 };
 
 // TODO: move to utils or something more general
