@@ -12,6 +12,15 @@
 #include "GlWrapper.h"
 #include "Chunk.h"
 
+enum BlockId {
+  BLOCK_AIR,
+  BLOCK_GRASS,
+  BLOCK_WATER,
+  BLOCK_DIRT,
+  BLOCK_OAK_LOG,
+  BLOCK_LEAVES
+};
+
 struct Block {
   // front back top bottom left right
   ivec2 texCoord[6];

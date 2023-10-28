@@ -15,11 +15,14 @@ const float AtlasW = 256.f;
 const float AtlasH = 256.f;
 
 // TODO: Read in json
+// TODO: create on runtime
 const struct Block BlockTypes[] = {
     {0},
     {{{3, 0}, {3, 0}, {0, 0}, {3, 0}, {3, 0}, {3, 0}}, 1, 0},
     {{{13, 12}, {13, 12}, {13, 12}, {13, 12}, {13, 12}, {13, 12}}, 0, 1},
     {{{2, 0}, {2, 0}, {2, 0}, {2, 0}, {2, 0}, {2, 0}}, 1, 0},
+    {{{4, 1}, {4, 1}, {5, 1}, {4, 1}, {4, 1}, {4, 1}}, 1, 0},
+    {{{4, 3}, {4, 3}, {4, 3}, {4, 3}, {4, 3}, {4, 3}}, 0, 1},
 };
 
 // TODO: remove hardcoded width and height
@@ -305,35 +308,35 @@ void AddToWaterBuffer(unsigned int* chunkData, int x, int y, int z, int worldX,
   // index out of range
   // TODO: fix check != 1, since now only water, air and solid exist
 
-  if (y + 1 == CHUNK_HEIGHT ||
-      !BlockTypes[chunkData[PosToIndex(x, y + 1, z)]].isTranslucent) {
-    // Adds face to the buffer and incremenets faceIndex
-    AddFaceToBuffer(chunkData[PosToIndex(x, y, z)], BLOCK_FACE_TOP, worldX, y,
-                    worldZ, currentFaceIndex, vertices, triangles);
-  }
-  if (y - 1 == -1 ||
-      !BlockTypes[chunkData[PosToIndex(x, y - 1, z)]].isTranslucent) {
-    AddFaceToBuffer(chunkData[PosToIndex(x, y, z)], BLOCK_FACE_BOTTOM, worldX,
-                    y, worldZ, currentFaceIndex, vertices, triangles);
-  }
-  if (x + 1 == CHUNK_LENGTH ||
-      !BlockTypes[chunkData[PosToIndex(x + 1, y, z)]].isTranslucent) {
-    AddFaceToBuffer(chunkData[PosToIndex(x, y, z)], BLOCK_FACE_RIGHT, worldX, y,
-                    worldZ, currentFaceIndex, vertices, triangles);
-  }
-  if (x - 1 == -1 ||
-      !BlockTypes[chunkData[PosToIndex(x - 1, y, z)]].isTranslucent) {
-    AddFaceToBuffer(chunkData[PosToIndex(x, y, z)], BLOCK_FACE_LEFT, worldX, y,
-                    worldZ, currentFaceIndex, vertices, triangles);
-  }
-  if (z + 1 == CHUNK_LENGTH ||
-      !BlockTypes[chunkData[PosToIndex(x, y, z + 1)]].isTranslucent) {
-    AddFaceToBuffer(chunkData[PosToIndex(x, y, z)], BLOCK_FACE_FRONT, worldX, y,
-                    worldZ, currentFaceIndex, vertices, triangles);
-  }
-  if (z - 1 == -1 ||
-      !BlockTypes[chunkData[PosToIndex(x, y, z - 1)]].isTranslucent) {
-    AddFaceToBuffer(chunkData[PosToIndex(x, y, z)], BLOCK_FACE_BACK, worldX, y,
-                    worldZ, currentFaceIndex, vertices, triangles);
-  }
+  // if (y + 1 == CHUNK_HEIGHT ||
+  //     !BlockTypes[chunkData[PosToIndex(x, y + 1, z)]].isTranslucent) {
+  //   // Adds face to the buffer and incremenets faceIndex
+  AddFaceToBuffer(chunkData[PosToIndex(x, y, z)], BLOCK_FACE_TOP, worldX, y,
+                  worldZ, currentFaceIndex, vertices, triangles);
+  // }
+  // if (y - 1 == -1 ||
+  //     !BlockTypes[chunkData[PosToIndex(x, y - 1, z)]].isTranslucent) {
+  AddFaceToBuffer(chunkData[PosToIndex(x, y, z)], BLOCK_FACE_BOTTOM, worldX, y,
+                  worldZ, currentFaceIndex, vertices, triangles);
+  // }
+  // if (x + 1 == CHUNK_LENGTH ||
+  //     !BlockTypes[chunkData[PosToIndex(x + 1, y, z)]].isTranslucent) {
+  AddFaceToBuffer(chunkData[PosToIndex(x, y, z)], BLOCK_FACE_RIGHT, worldX, y,
+                  worldZ, currentFaceIndex, vertices, triangles);
+  // }
+  // if (x - 1 == -1 ||
+  //     !BlockTypes[chunkData[PosToIndex(x - 1, y, z)]].isTranslucent) {
+  AddFaceToBuffer(chunkData[PosToIndex(x, y, z)], BLOCK_FACE_LEFT, worldX, y,
+                  worldZ, currentFaceIndex, vertices, triangles);
+  // }
+  // if (z + 1 == CHUNK_LENGTH ||
+  //     !BlockTypes[chunkData[PosToIndex(x, y, z + 1)]].isTranslucent) {
+  AddFaceToBuffer(chunkData[PosToIndex(x, y, z)], BLOCK_FACE_FRONT, worldX, y,
+                  worldZ, currentFaceIndex, vertices, triangles);
+  // }
+  // if (z - 1 == -1 ||
+  //     !BlockTypes[chunkData[PosToIndex(x, y, z - 1)]].isTranslucent) {
+  AddFaceToBuffer(chunkData[PosToIndex(x, y, z)], BLOCK_FACE_BACK, worldX, y,
+                  worldZ, currentFaceIndex, vertices, triangles);
+  // }
 }

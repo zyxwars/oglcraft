@@ -100,6 +100,8 @@ int main(void) {
   fnl_state noise = fnlCreateState();
   noise.noise_type = FNL_NOISE_OPENSIMPLEX2;
 
+  srand(1);
+
   int renderDistance = 8;
   int visibleChunkCount = (int)pow(renderDistance * 2 + 1, 2);
   int maxLoadedChunks = visibleChunkCount * 2;
