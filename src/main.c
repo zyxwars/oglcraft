@@ -73,15 +73,13 @@ int main(void) {
   CALL_GL(glActiveTexture(GL_TEXTURE0));
   CALL_GL(glBindTexture(GL_TEXTURE_2D, texture));
 
-  CALL_GL(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT));
-  CALL_GL(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT));
-  CALL_GL(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
-                          GL_LINEAR_MIPMAP_NEAREST));
+  CALL_GL(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST));
   CALL_GL(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST));
 
   CALL_GL(glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, textureWidth, textureHeight,
                        0, GL_RGBA, GL_UNSIGNED_BYTE, textureData));
-  CALL_GL(glGenerateMipmap(GL_TEXTURE_2D));
+  // CALL_GL(glGenerateMipmap(GL_TEXTURE_2D));
+
   stbi_image_free(textureData);
 
   GLuint chunkShaderProgram = CreateShaderProgram(

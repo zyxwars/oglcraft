@@ -55,10 +55,8 @@ const struct Block BlockTypes[] = {
     {{{4, 3}, {4, 3}, {4, 3}, {4, 3}, {4, 3}, {4, 3}}, 1, 0, 1, 0},
 };
 
-// TODO: remove hardcoded width and height
-// Get center of texel to avoid bleeding
-float GetTexelX(int x) { return ((x + 0.5f) / AtlasW); };
-float GetTexelY(int y) { return ((y + 0.5f) / AtlasH); };
+float GetTexelX(int x) { return (x / AtlasW); };
+float GetTexelY(int y) { return (y / AtlasH); };
 
 void AddFaceToBuffer(unsigned int blockId, enum BlockFace blockFace, int worldX,
                      int worldY, int worldZ, int* currentFaceIndex,
@@ -69,20 +67,24 @@ void AddFaceToBuffer(unsigned int blockId, enum BlockFace blockFace, int worldX,
 
   for (int i = 0; i < 6; i++) {
     //
-    uvs[i * 4][0] = GetTexelX(currentBlockType->texCoord[i][0] * 16);
-    uvs[i * 4][1] = GetTexelY(currentBlockType->texCoord[i][1] * 16 + 15);
+    uvs[i * 4][0] = GetTexelX(currentBlockType->texCoord[i][0] * blockSize);
+    uvs[i * 4][1] =
+        GetTexelY(currentBlockType->texCoord[i][1] * blockSize + blockSize);
 
     //
-    uvs[i * 4 + 1][0] = GetTexelX(currentBlockType->texCoord[i][0] * 16);
-    uvs[i * 4 + 1][1] = GetTexelY(currentBlockType->texCoord[i][1] * 16);
+    uvs[i * 4 + 1][0] = GetTexelX(currentBlockType->texCoord[i][0] * blockSize);
+    uvs[i * 4 + 1][1] = GetTexelY(currentBlockType->texCoord[i][1] * blockSize);
 
     //
-    uvs[i * 4 + 2][0] = GetTexelX(currentBlockType->texCoord[i][0] * 16 + 15);
-    uvs[i * 4 + 2][1] = GetTexelY(currentBlockType->texCoord[i][1] * 16);
+    uvs[i * 4 + 2][0] =
+        GetTexelX(currentBlockType->texCoord[i][0] * blockSize + blockSize);
+    uvs[i * 4 + 2][1] = GetTexelY(currentBlockType->texCoord[i][1] * blockSize);
 
     //
-    uvs[i * 4 + 3][0] = GetTexelX(currentBlockType->texCoord[i][0] * 16 + 15);
-    uvs[i * 4 + 3][1] = GetTexelY(currentBlockType->texCoord[i][1] * 16 + 15);
+    uvs[i * 4 + 3][0] =
+        GetTexelX(currentBlockType->texCoord[i][0] * blockSize + blockSize);
+    uvs[i * 4 + 3][1] =
+        GetTexelY(currentBlockType->texCoord[i][1] * blockSize + blockSize);
   }
 
   const struct Vertex frontFace[] = {
