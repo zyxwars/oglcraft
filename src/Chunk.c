@@ -149,6 +149,9 @@ struct Chunk* CreateChunk(fnl_state* noiseState, int chunkX, int chunkZ) {
     // Spawn trunk only on grass
     if (chunk->blocks[PosToIndex(treeX, y - 1, treeZ)] != BLOCK_GRASS) continue;
 
+    // Turn grass to dirt
+    chunk->blocks[PosToIndex(treeX, y - 1, treeZ)] = BLOCK_DIRT;
+
     // Trunk
     chunk->blocks[PosToIndex(treeX, y, treeZ)] = BLOCK_OAK_LOG;
     chunk->blocks[PosToIndex(treeX, y + 1, treeZ)] = BLOCK_OAK_LOG;
