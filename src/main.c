@@ -184,9 +184,6 @@ int main(void) {
 
     // Only blend translucent buffer
     CALL_GL(glDisable(GL_BLEND));
-    CALL_GL(GLint isWaterUniform =
-                glGetUniformLocation(chunkShaderProgram, "u_IsWater"));
-    CALL_GL(glUniform1i(isWaterUniform, 0));
 
     for (int i = 0; i < chunksToRenderIndex; i++) {
       DrawBlocks(chunksToRender[i]);
@@ -194,7 +191,6 @@ int main(void) {
 
     CALL_GL(glEnable(GL_BLEND));
     CALL_GL(glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA));
-    CALL_GL(glUniform1i(isWaterUniform, 1));
 
     for (int i = 0; i < chunksToRenderIndex; i++) {
       DrawWater(chunksToRender[i]);

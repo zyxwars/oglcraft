@@ -244,12 +244,12 @@ void DrawBlocks(struct Chunk* chunk) {
   int stride = sizeof(struct Vertex);
 
   CALL_GL(glEnableVertexAttribArray(0));
-  CALL_GL(glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, stride,
-                                (void*)offsetof(struct Vertex, position)));
+  CALL_GL(glVertexAttribIPointer(0, 1, GL_INT, stride,
+                                 (void*)offsetof(struct Vertex, blockId)));
 
   CALL_GL(glEnableVertexAttribArray(1));
   CALL_GL(glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, stride,
-                                (void*)offsetof(struct Vertex, color)));
+                                (void*)offsetof(struct Vertex, position)));
 
   CALL_GL(glEnableVertexAttribArray(2));
   CALL_GL(glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, stride,
@@ -270,12 +270,12 @@ void DrawWater(struct Chunk* chunk) {
   int stride = sizeof(struct Vertex);
 
   CALL_GL(glEnableVertexAttribArray(0));
-  CALL_GL(glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, stride,
-                                (void*)offsetof(struct Vertex, position)));
+  CALL_GL(glVertexAttribIPointer(0, 1, GL_INT, stride,
+                                 (void*)offsetof(struct Vertex, blockId)));
 
   CALL_GL(glEnableVertexAttribArray(1));
   CALL_GL(glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, stride,
-                                (void*)offsetof(struct Vertex, color)));
+                                (void*)offsetof(struct Vertex, position)));
 
   CALL_GL(glEnableVertexAttribArray(2));
   CALL_GL(glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, stride,
