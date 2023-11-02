@@ -144,13 +144,30 @@ int main(void) {
     glm_mat4_mulN((mat4*[]){&(camera->projectionMatrix), &(camera->viewMatrix)},
                   2, mvp);
 
+    // mat4 projMatInv;
+    // mat4 viewMatInv;
+    // glm_mat4_inv(camera->projectionMatrix, projMatInv);
+    // glm_mat4_inv(camera->viewMatrix, viewMatInv);
+
     // Bind shader
     CALL_GL(glUseProgram(chunkShaderProgram));
 
-    CALL_GL(GLint MVPUniformLocation =
+    // mvp matrix
+    CALL_GL(GLint MVPUniform =
                 glGetUniformLocation(chunkShaderProgram, "u_MVP"));
-    CALL_GL(glUniformMatrix4fv(MVPUniformLocation, 1, GL_FALSE, mvp[0]));
+    CALL_GL(glUniformMatrix4fv(MVPUniform, 1, GL_FALSE, mvp[0]));
 
+    // inverse matrices
+    // CALL_GL(GLint ProjMatInvUniform =
+    //             glGetUniformLocation(chunkShaderProgram, "u_ProjMatInv"));
+    // CALL_GL(GLint ViewMatInvUniform =
+    //             glGetUniformLocation(chunkShaderProgram, "u_ViewMatInv"));
+
+    // CALL_GL(glUniformMatrix4fv(ProjMatInvUniform, 1, GL_FALSE,
+    // projMatInv[0])); CALL_GL(glUniformMatrix4fv(ViewMatInvUniform, 1,
+    // GL_FALSE, viewMatInv[0]));
+
+    // time
     CALL_GL(GLint timeUniform =
                 glGetUniformLocation(chunkShaderProgram, "u_TimeS"));
     CALL_GL(glUniform1f(timeUniform, currentTimeS));
@@ -178,7 +195,7 @@ int main(void) {
         }
 
         chunksToRender[chunksToRenderIndex++] = chunk;
-        // DrawBlocks(chunk);
+        // DrawOpaque(chunk);
       }
     }
 
@@ -186,14 +203,14 @@ int main(void) {
     CALL_GL(glDisable(GL_BLEND));
 
     for (int i = 0; i < chunksToRenderIndex; i++) {
-      DrawBlocks(chunksToRender[i]);
+      DrawOpaque(chunksToRender[i]);
     }
 
     CALL_GL(glEnable(GL_BLEND));
     CALL_GL(glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA));
 
     for (int i = 0; i < chunksToRenderIndex; i++) {
-      DrawWater(chunksToRender[i]);
+      DrawTranslucent(chunksToRender[i]);
     }
 
     free(chunksToRender);

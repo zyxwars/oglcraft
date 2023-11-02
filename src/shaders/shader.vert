@@ -16,8 +16,10 @@ void main() {
   
   // Animate water
   if (in_BlockId == 2) {
+    // Move with sine wave, change intensity based on time sine wave
     pos.y =
         pos.y + 0.1 * sin((pos.x * pos.z) * 10 + u_TimeS) * sin(u_TimeS * 0.1);
+    // Move water level down
     pos.y -= 0.15;
   }
   // Animate leaves

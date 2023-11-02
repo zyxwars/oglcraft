@@ -237,7 +237,7 @@ struct Chunk* CreateChunk(fnl_state* noiseState, int chunkX, int chunkZ) {
   return chunk;
 };
 
-void DrawBlocks(struct Chunk* chunk) {
+void DrawOpaque(struct Chunk* chunk) {
   CALL_GL(glBindBuffer(GL_ARRAY_BUFFER, chunk->opaqueMesh.vbo));
   CALL_GL(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, chunk->opaqueMesh.ebo));
 
@@ -263,7 +263,7 @@ void DrawBlocks(struct Chunk* chunk) {
                          GL_UNSIGNED_INT, 0));
 }
 
-void DrawWater(struct Chunk* chunk) {
+void DrawTranslucent(struct Chunk* chunk) {
   CALL_GL(glBindBuffer(GL_ARRAY_BUFFER, chunk->translucentMesh.vbo));
   CALL_GL(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, chunk->translucentMesh.ebo));
 

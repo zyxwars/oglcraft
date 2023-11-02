@@ -17,6 +17,11 @@ float LinearizeDepth(float depth) {
   return (2.0 * near * far) / (far + near - z * (far - near));
 }
 
+float FogExp2(float viewDistance, float density){
+  float factor = viewDistance * (density / sqrt(log(2.f)));
+  return exp2(-factor * factor);
+}
+
 void main() {
   // Get texel pos
   vec4 tex = texture(texture1, out_TexCoords);
@@ -30,7 +35,7 @@ void main() {
 
   // Get z depth
   float depth = LinearizeDepth(gl_FragCoord.z) / far;
-  depth = pow(depth, 2);
+  float fogFactor = 1 - FogExp2(depth, 1.f);
 
   // Set colors
   vec3 lightColor = vec3(1, 1, 0.8);
@@ -46,5 +51,5 @@ void main() {
 
   vec3 color = tex.xyz * (diffuse + ambient);
 
-  FragColor = vec4(mix(color, fogColor, depth), tex.a);
+  FragColor = vec4(mix(color, fogColor, fogFactor), tex.a);
 }

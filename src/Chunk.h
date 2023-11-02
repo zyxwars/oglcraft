@@ -39,9 +39,9 @@ struct Chunk* CreateChunk(fnl_state* noiseState, int x, int z);
 
 void DestroyChunk(struct Chunk** chunk);
 
-void DrawBlocks(struct Chunk* chunk);
+void DrawOpaque(struct Chunk* chunk);
 
-void DrawWater(struct Chunk* chunk);
+void DrawTranslucent(struct Chunk* chunk);
 
 struct Chunk* GetChunk(int x, int z, struct Chunk** loadedChunks,
                        int loadedChunksSize, fnl_state* noiseState);
