@@ -13,7 +13,7 @@
 #include "Block.h"
 
 #define CHUNK_LENGTH 16
-#define CHUNK_HEIGHT 32
+#define CHUNK_HEIGHT 64
 // how many blocks fit in 1 tall chunk
 #define CHUNK_PLANE_AREA (CHUNK_LENGTH * CHUNK_LENGTH)
 #define CHUNK_VOLUME (CHUNK_PLANE_AREA * CHUNK_HEIGHT)

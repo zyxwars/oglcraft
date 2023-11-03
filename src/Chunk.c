@@ -88,6 +88,26 @@ void CreateTranslucentMesh(struct Chunk* chunk) {
   chunk->translucentFaceCount = currentFaceIndex;
 }
 
+float PerlinNoise(fnl_state* noiseState, float x, float z, int octaves,
+                  float persistence) {
+  float total = 0;
+  float frequency = 1;
+  float amplitude = 1;
+  float maxValue = 0;
+
+  for (int i = 0; i < octaves; i++) {
+    total +=
+        fnlGetNoise2D(noiseState, x * frequency, z * frequency) * amplitude;
+
+    maxValue += amplitude;
+
+    amplitude *= persistence;
+    frequency *= 2;
+  }
+
+  return total / maxValue;
+}
+
 struct Chunk* CreateChunk(fnl_state* noiseState, int chunkX, int chunkZ) {
   struct Chunk* chunk = calloc(1, sizeof(struct Chunk));
   chunk->x = chunkX;
@@ -96,12 +116,17 @@ struct Chunk* CreateChunk(fnl_state* noiseState, int chunkX, int chunkZ) {
   // Populate chunk
   for (int x = 0; x < CHUNK_LENGTH; x++) {
     for (int z = 0; z < CHUNK_LENGTH; z++) {
-      // TODO: proper block types
-      float noise = fnlGetNoise2D(noiseState, x + chunk->x * CHUNK_LENGTH,
-                                  z + chunk->z * CHUNK_LENGTH);
+      float scale = 0.25f;
+      // float noise = fnlGetNoise2D(noiseState, x + chunk->x * CHUNK_LENGTH,
+      //                             z + chunk->z * CHUNK_LENGTH);
+      float noise =
+          PerlinNoise(noiseState, (x + (chunk->x * CHUNK_LENGTH)) * scale,
+                      (z + (chunk->z * CHUNK_LENGTH)) * scale, 4, 2);
+
       noise = (noise + 1.f) / 2.f;
-      // noise = (float)pow(noise, 3);
-      int height = noise * CHUNK_HEIGHT;
+      noise = (float)pow(noise, 2);
+      // TODO: crash when noise=1, move height down by 1
+      int height = noise * (CHUNK_HEIGHT - 1);
       // avoid holes in the ground
       if (height == 0) height = 1;
 
@@ -114,7 +139,7 @@ struct Chunk* CreateChunk(fnl_state* noiseState, int chunkX, int chunkZ) {
   }
 
   // Fill in water
-  int waterHeight = 10;
+  int waterHeight = 5;
   for (int y = 0; y < waterHeight; y++) {
     for (int x = 0; x < CHUNK_LENGTH; x++) {
       for (int z = 0; z < CHUNK_LENGTH; z++) {
@@ -125,6 +150,18 @@ struct Chunk* CreateChunk(fnl_state* noiseState, int chunkX, int chunkZ) {
       }
     }
   }
+
+  // Fill rocky mountaing
+  // int stoneHeight = 24;
+  // for (int y = stoneHeight; y < CHUNK_HEIGHT; y++) {
+  //   for (int x = 0; x < CHUNK_LENGTH; x++) {
+  //     for (int z = 0; z < CHUNK_LENGTH; z++) {
+  //       if (chunk->blocks[PosToIndex(x, y, z)] == BLOCK_AIR) continue;
+
+  //       chunk->blocks[PosToIndex(x, y, z)] = BLOCK_STONE;
+  //     }
+  //   }
+  // }
 
   // Turn blocks under water to dirt
   for (int y = 0; y < waterHeight - 1; y++) {
