@@ -49,7 +49,7 @@ struct Camera* CreateCamera() {
   camera->transform.forward[1] = 0.f;
   camera->transform.forward[2] = -1.f;
 
-  SetTranslation(0, 64.f, 0, &(camera->transform));
+  SetTranslation(0, 32.f, 0, &(camera->transform));
   // The y rotation can exceed (-90,90) range
   SetRotation(-90.f, -89.f, 0, &(camera->transform));
 

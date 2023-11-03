@@ -7,18 +7,19 @@ in vec2 out_TexCoords;
 
 uniform sampler2D texture1;
 
-// TODO: adjuct based on real near and far plane
+// TODO: adjust based on real near and far plane
 float near = 1.f;
 float far = 100.f;
 
-// TODO: what this does
 float LinearizeDepth(float depth) {
-  float z = depth * 2.0 - 1.0;  // back to NDC
-  return (2.0 * near * far) / (far + near - z * (far - near));
+  // convert from [0,1] to [-1,1]
+  float z = depth * 2.0 - 1.0;
+  // reverse to linear
+  return (2.0 * near * far) / (far + near - (z * (far - near)));
 }
 
-float FogExp2(float viewDistance, float density){
-  float factor = viewDistance * (density / sqrt(log(2.f)));
+float ExpSquaredFog(float depth, float density){
+  float factor = depth * density;
   return exp2(-factor * factor);
 }
 
@@ -33,9 +34,9 @@ void main() {
     discard;
   }
 
-  // Get z depth
-  float depth = LinearizeDepth(gl_FragCoord.z) / far;
-  float fogFactor = 1 - FogExp2(depth, 1.f);
+  // Get z depth and divide by far to get [0,1] range
+  float linearDepthNormalized = LinearizeDepth(gl_FragCoord.z) / far;
+  float fogFactor = ExpSquaredFog(linearDepthNormalized, 2.0f);
 
   // Set colors
   vec3 lightColor = vec3(1, 1, 0.8);
@@ -51,5 +52,5 @@ void main() {
 
   vec3 color = tex.xyz * (diffuse + ambient);
 
-  FragColor = vec4(mix(color, fogColor, fogFactor), tex.a);
+  FragColor = vec4(mix(fogColor, color, fogFactor), tex.a);
 }
