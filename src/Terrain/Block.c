@@ -233,7 +233,7 @@ void AddToOpaqueBuffer(unsigned int* chunkData, int x, int y, int z, int worldX,
   int blockId = chunkData[PosToIndex(x, y, z)];
 
   // Only process opaque blocks
-  if (!BlockTypes[blockId].isOpaque) {
+  if (!(BlockTypes[blockId].isOpaque)) {
     return;
   }
 
@@ -256,7 +256,7 @@ void AddToOpaqueBuffer(unsigned int* chunkData, int x, int y, int z, int worldX,
   const struct Block* leftN =
       x == 0 ? NULL : &BlockTypes[chunkData[PosToIndex(x - 1, y, z)]];
 
-  // If neihbor is out of range render without checking other conditions
+  // If neighbor is out of range render without checking other conditions
   // TODO: implement self culling for glass
   if (topN == NULL || topN->isCutout || topN->isTranslucent)
     AddFaceToBuffer(blockId, BLOCK_FACE_TOP, worldX, y, worldZ,
@@ -289,7 +289,7 @@ void AddToTranslucentBuffer(unsigned int* chunkData, int x, int y, int z,
   int blockId = chunkData[PosToIndex(x, y, z)];
 
   // Only process translucent blocks
-  if (!BlockTypes[blockId].isTranslucent) {
+  if (!(BlockTypes[blockId].isTranslucent)) {
     return;
   }
 
@@ -327,9 +327,9 @@ void AddToTranslucentBuffer(unsigned int* chunkData, int x, int y, int z,
                     currentFaceIndex, vertices, triangles);
 
   if (leftN == NULL || leftN->isCutout)
-    AddFaceToBuffer(blockId, BLOCK_FACE_LEFT, worldX, y,
+    AddFaceToBuffer(blockId, BLOCK_FACE_LEFT, worldX, y, worldZ,
+                    currentFaceIndex, vertices, triangles);
 
-                    worldZ, currentFaceIndex, vertices, triangles);
   if (frontN == NULL || frontN->isCutout)
     AddFaceToBuffer(blockId, BLOCK_FACE_FRONT, worldX, y, worldZ,
                     currentFaceIndex, vertices, triangles);

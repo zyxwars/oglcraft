@@ -13,7 +13,7 @@
 #include "Block.h"
 
 #define CHUNK_LENGTH 16
-#define CHUNK_HEIGHT 32
+#define CHUNK_HEIGHT 128
 // how many blocks fit in 1 tall chunk
 #define CHUNK_PLANE_AREA (CHUNK_LENGTH * CHUNK_LENGTH)
 #define CHUNK_VOLUME (CHUNK_PLANE_AREA * CHUNK_HEIGHT)
@@ -44,9 +44,7 @@ struct Chunk* CreateChunk(struct GenerationNoise* noiseState, int x, int z);
 
 void DestroyChunk(struct Chunk** chunk);
 
-void DrawOpaque(struct Chunk* chunk);
-
-void DrawTranslucent(struct Chunk* chunk);
+void DrawChunkMesh(struct Mesh* mesh);
 
 struct Chunk* GetChunk(int x, int z, struct Chunk** loadedChunks,
                        int loadedChunksSize, struct GenerationNoise* noise);

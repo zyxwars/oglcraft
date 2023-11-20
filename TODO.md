@@ -1,3 +1,4 @@
+- fix skybox disappearing
 - improve terrain gen
 - separate rendering from generation logic
 - order water

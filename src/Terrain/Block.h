@@ -28,6 +28,7 @@ struct Block {
   int isCutout;
   // Whether two same blocks next to each other will render their touching faces
   // i.e. leaves, chests will, glass won't
+  // basic blocks like dirt, stone won't as well -> isSelfCulled = true
   int isSelfCulled;
 };
 

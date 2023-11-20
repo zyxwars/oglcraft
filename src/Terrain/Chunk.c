@@ -80,9 +80,9 @@ void CreateTranslucentMesh(struct Chunk* chunk) {
   CALL_GL(glBufferData(GL_ARRAY_BUFFER,
                        sizeof(struct Vertex) * 4 * currentFaceIndex, vertices,
                        GL_STATIC_DRAW));
-  glBufferData(GL_ELEMENT_ARRAY_BUFFER,
-               sizeof(unsigned int) * 6 * currentFaceIndex, triangles,
-               GL_STATIC_DRAW);
+  CALL_GL(glBufferData(GL_ELEMENT_ARRAY_BUFFER,
+                       sizeof(unsigned int) * 6 * currentFaceIndex, triangles,
+                       GL_STATIC_DRAW));
   free(vertices);
   free(triangles);
   vertices = NULL;
@@ -145,162 +145,59 @@ struct Chunk* CreateChunk(struct GenerationNoise* noise, int chunkX,
           &(noise->continentalness), (x + (chunk->x * CHUNK_LENGTH)),
           (z + (chunk->z * CHUNK_LENGTH)), 4, 2, 0.1f);
 
-      float temperature = SamplePerlinNoise(
-          &(noise->temperature), (x + (chunk->x * CHUNK_LENGTH)),
-          (z + (chunk->z * CHUNK_LENGTH)), 1, 2, 0.1f);
-      temperature = (temperature + 1.f) / 2.f;
+      // float temperature = SamplePerlinNoise(
+      //     &(noise->temperature), (x + (chunk->x * CHUNK_LENGTH)),
+      //     (z + (chunk->z * CHUNK_LENGTH)), 1, 2, 0.1f);
+      // temperature = (temperature + 1.f) / 2.f;
 
-      float humidity =
-          SamplePerlinNoise(&(noise->humidity), (x + (chunk->x * CHUNK_LENGTH)),
-                            (z + (chunk->z * CHUNK_LENGTH)), 1, 2, 0.1f);
-      humidity = (humidity + 1.f) / 2.f;
+      // float humidity =
+      //     SamplePerlinNoise(&(noise->humidity), (x + (chunk->x *
+      //     CHUNK_LENGTH)),
+      //                       (z + (chunk->z * CHUNK_LENGTH)), 1, 2, 0.1f);
+      // humidity = (humidity + 1.f) / 2.f;
 
       // TODO: skybox dissapears when worldY is about 15+
       continentalness = (continentalness + 1.f) / 2.f;
-      int worldY = continentalness * 31;
+      int worldY = continentalness * (CHUNK_HEIGHT - 1);
 
-      enum Biome biome = BIOME_FOREST;
-      if (humidity < 0.2f && temperature > 0.5f) {
-        biome = BIOME_DESERT;
-      }
+      // enum Biome biome = BIOME_FOREST;
+      // if (humidity < 0.2f && temperature > 0.5f) {
+      //   biome = BIOME_DESERT;
+      // }
 
-      enum BlockId surfaceBlock;
+      enum BlockId surfaceBlock = BLOCK_STONE;
 
-      switch (biome) {
-        case BIOME_FOREST:
-          surfaceBlock = BLOCK_GRASS;
-          break;
-        case BIOME_DESERT:
-          surfaceBlock = BLOCK_SAND;
-          break;
-      }
+      // TODO:
+      // switch (biome) {
+      //   case BIOME_FOREST:
+      //     surfaceBlock = BLOCK_GRASS;
+      //     break;
+      //   case BIOME_DESERT:
+      //     surfaceBlock = BLOCK_SAND;
+      //     break;
+      // }
 
       chunk->blocks[PosToIndex(x, worldY, z)] = surfaceBlock;
 
       // Fill every block under height to a solid
       for (int y = 0; y < worldY; y++) {
-        chunk->blocks[PosToIndex(x, y, z)] = BLOCK_DIRT;
+        chunk->blocks[PosToIndex(x, y, z)] = BLOCK_STONE;
       }
     }
   }
 
   // Fill in water
-  int waterHeight = 10;
-  for (int y = 0; y < waterHeight; y++) {
-    for (int x = 0; x < CHUNK_LENGTH; x++) {
-      for (int z = 0; z < CHUNK_LENGTH; z++) {
-        // Fill air blocks with water
-        if (chunk->blocks[PosToIndex(x, y, z)] == BLOCK_AIR) {
-          chunk->blocks[PosToIndex(x, y, z)] = BLOCK_WATER;
-        }
-      }
-    }
-  }
-
-  // Turn blocks under water to dirt
-  for (int y = 0; y < waterHeight - 1; y++) {
-    for (int x = 0; x < CHUNK_LENGTH; x++) {
-      for (int z = 0; z < CHUNK_LENGTH; z++) {
-        if (chunk->blocks[PosToIndex(x, y + 1, z)] == BLOCK_WATER &&
-            chunk->blocks[PosToIndex(x, y, z)] != BLOCK_WATER) {
-          chunk->blocks[PosToIndex(x, y, z)] = BLOCK_DIRT;
-        }
-      }
-    }
-  }
-
-  // Don't spawn on chunk boundaries
-  int treeX = rand() % (CHUNK_LENGTH - 4) + 2;
-  int treeZ = rand() % (CHUNK_LENGTH - 4) + 2;
-
-  for (int y = 0; y < CHUNK_HEIGHT - 8; y++) {
-    // Block is air
-    if (chunk->blocks[PosToIndex(treeX, y, treeZ)] != BLOCK_AIR) continue;
-
-    // Spawn trunk only on grass
-    if (chunk->blocks[PosToIndex(treeX, y - 1, treeZ)] != BLOCK_GRASS) continue;
-
-    // Turn grass to dirt
-    chunk->blocks[PosToIndex(treeX, y - 1, treeZ)] = BLOCK_DIRT;
-
-    // Trunk
-    chunk->blocks[PosToIndex(treeX, y, treeZ)] = BLOCK_OAK_LOG;
-    chunk->blocks[PosToIndex(treeX, y + 1, treeZ)] = BLOCK_OAK_LOG;
-    chunk->blocks[PosToIndex(treeX, y + 2, treeZ)] = BLOCK_OAK_LOG;
-    chunk->blocks[PosToIndex(treeX, y + 3, treeZ)] = BLOCK_OAK_LOG;
-    chunk->blocks[PosToIndex(treeX, y + 4, treeZ)] = BLOCK_OAK_LOG;
-    chunk->blocks[PosToIndex(treeX, y + 5, treeZ)] = BLOCK_OAK_LOG;
-
-    // Leaves
-    // From top layer
-    chunk->blocks[PosToIndex(treeX, y + 6, treeZ)] = BLOCK_LEAVES;
-    chunk->blocks[PosToIndex(treeX + 1, y + 6, treeZ)] = BLOCK_LEAVES;
-    chunk->blocks[PosToIndex(treeX - 1, y + 6, treeZ)] = BLOCK_LEAVES;
-    chunk->blocks[PosToIndex(treeX, y + 6, treeZ - 1)] = BLOCK_LEAVES;
-    chunk->blocks[PosToIndex(treeX, y + 6, treeZ + 1)] = BLOCK_LEAVES;
-
-    //
-    chunk->blocks[PosToIndex(treeX + 1, y + 5, treeZ)] = BLOCK_LEAVES;
-    chunk->blocks[PosToIndex(treeX - 1, y + 5, treeZ)] = BLOCK_LEAVES;
-    chunk->blocks[PosToIndex(treeX, y + 5, treeZ - 1)] = BLOCK_LEAVES;
-    chunk->blocks[PosToIndex(treeX, y + 5, treeZ + 1)] = BLOCK_LEAVES;
-
-    //
-    chunk->blocks[PosToIndex(treeX + 1, y + 4, treeZ + 2)] = BLOCK_LEAVES;
-    chunk->blocks[PosToIndex(treeX + 0, y + 4, treeZ + 2)] = BLOCK_LEAVES;
-    chunk->blocks[PosToIndex(treeX + -1, y + 4, treeZ + 2)] = BLOCK_LEAVES;
-
-    chunk->blocks[PosToIndex(treeX + 2, y + 4, treeZ + 1)] = BLOCK_LEAVES;
-    chunk->blocks[PosToIndex(treeX + 1, y + 4, treeZ + 1)] = BLOCK_LEAVES;
-    chunk->blocks[PosToIndex(treeX + 0, y + 4, treeZ + 1)] = BLOCK_LEAVES;
-    chunk->blocks[PosToIndex(treeX + -1, y + 4, treeZ + 1)] = BLOCK_LEAVES;
-    chunk->blocks[PosToIndex(treeX + -2, y + 4, treeZ + 1)] = BLOCK_LEAVES;
-
-    chunk->blocks[PosToIndex(treeX + 2, y + 4, treeZ + 0)] = BLOCK_LEAVES;
-    chunk->blocks[PosToIndex(treeX + 1, y + 4, treeZ + 0)] = BLOCK_LEAVES;
-    chunk->blocks[PosToIndex(treeX + -1, y + 4, treeZ + 0)] = BLOCK_LEAVES;
-    chunk->blocks[PosToIndex(treeX + -2, y + 4, treeZ + 0)] = BLOCK_LEAVES;
-
-    chunk->blocks[PosToIndex(treeX + 2, y + 4, treeZ - 1)] = BLOCK_LEAVES;
-    chunk->blocks[PosToIndex(treeX + 1, y + 4, treeZ - 1)] = BLOCK_LEAVES;
-    chunk->blocks[PosToIndex(treeX + 0, y + 4, treeZ - 1)] = BLOCK_LEAVES;
-    chunk->blocks[PosToIndex(treeX + -1, y + 4, treeZ - 1)] = BLOCK_LEAVES;
-    chunk->blocks[PosToIndex(treeX + -2, y + 4, treeZ - 1)] = BLOCK_LEAVES;
-
-    chunk->blocks[PosToIndex(treeX + 1, y + 4, treeZ - 2)] = BLOCK_LEAVES;
-    chunk->blocks[PosToIndex(treeX + 0, y + 4, treeZ - 2)] = BLOCK_LEAVES;
-    chunk->blocks[PosToIndex(treeX + -1, y + 4, treeZ - 2)] = BLOCK_LEAVES;
-
-    //
-    chunk->blocks[PosToIndex(treeX + 2, y + 3, treeZ + 2)] = BLOCK_LEAVES;
-    chunk->blocks[PosToIndex(treeX + 1, y + 3, treeZ + 2)] = BLOCK_LEAVES;
-    chunk->blocks[PosToIndex(treeX + 0, y + 3, treeZ + 2)] = BLOCK_LEAVES;
-    chunk->blocks[PosToIndex(treeX + -1, y + 3, treeZ + 2)] = BLOCK_LEAVES;
-    chunk->blocks[PosToIndex(treeX + -2, y + 3, treeZ + 2)] = BLOCK_LEAVES;
-
-    chunk->blocks[PosToIndex(treeX + 2, y + 3, treeZ + 1)] = BLOCK_LEAVES;
-    chunk->blocks[PosToIndex(treeX + 1, y + 3, treeZ + 1)] = BLOCK_LEAVES;
-    chunk->blocks[PosToIndex(treeX + 0, y + 3, treeZ + 1)] = BLOCK_LEAVES;
-    chunk->blocks[PosToIndex(treeX + -1, y + 3, treeZ + 1)] = BLOCK_LEAVES;
-    chunk->blocks[PosToIndex(treeX + -2, y + 3, treeZ + 1)] = BLOCK_LEAVES;
-
-    chunk->blocks[PosToIndex(treeX + 2, y + 3, treeZ + 0)] = BLOCK_LEAVES;
-    chunk->blocks[PosToIndex(treeX + 1, y + 3, treeZ + 0)] = BLOCK_LEAVES;
-    chunk->blocks[PosToIndex(treeX + -1, y + 3, treeZ + 0)] = BLOCK_LEAVES;
-    chunk->blocks[PosToIndex(treeX + -2, y + 3, treeZ + 0)] = BLOCK_LEAVES;
-
-    chunk->blocks[PosToIndex(treeX + 2, y + 3, treeZ - 1)] = BLOCK_LEAVES;
-    chunk->blocks[PosToIndex(treeX + 1, y + 3, treeZ - 1)] = BLOCK_LEAVES;
-    chunk->blocks[PosToIndex(treeX + 0, y + 3, treeZ - 1)] = BLOCK_LEAVES;
-    chunk->blocks[PosToIndex(treeX + -1, y + 3, treeZ - 1)] = BLOCK_LEAVES;
-    chunk->blocks[PosToIndex(treeX + -2, y + 3, treeZ - 1)] = BLOCK_LEAVES;
-
-    chunk->blocks[PosToIndex(treeX + 2, y + 3, treeZ - 2)] = BLOCK_LEAVES;
-    chunk->blocks[PosToIndex(treeX + 1, y + 3, treeZ - 2)] = BLOCK_LEAVES;
-    chunk->blocks[PosToIndex(treeX + 0, y + 3, treeZ - 2)] = BLOCK_LEAVES;
-    chunk->blocks[PosToIndex(treeX + -1, y + 3, treeZ - 2)] = BLOCK_LEAVES;
-    chunk->blocks[PosToIndex(treeX + -2, y + 3, treeZ - 2)] = BLOCK_LEAVES;
-  }
+  // int waterHeight = 20;
+  // for (int y = 0; y < waterHeight; y++) {
+  //   for (int x = 0; x < CHUNK_LENGTH; x++) {
+  //     for (int z = 0; z < CHUNK_LENGTH; z++) {
+  //       // Fill air blocks with water
+  //       if (chunk->blocks[PosToIndex(x, y, z)] == BLOCK_AIR) {
+  //         chunk->blocks[PosToIndex(x, y, z)] = BLOCK_WATER;
+  //       }
+  //     }
+  //   }
+  // }
 
   CreateOpaqueMesh(chunk);
   CreateTranslucentMesh(chunk);
@@ -336,12 +233,6 @@ void DrawChunkMesh(struct Mesh* mesh) {
   CALL_GL(glBindBuffer(GL_ARRAY_BUFFER, 0));
   CALL_GL(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0));
 }
-
-void DrawOpaque(struct Chunk* chunk) { DrawChunkMesh(&(chunk->opaqueMesh)); }
-
-void DrawTranslucent(struct Chunk* chunk) {
-  DrawChunkMesh(&(chunk->translucentMesh));
-};
 
 void DestroyChunk(struct Chunk** chunk) {
   CALL_GL(glDeleteBuffers(1, &(*chunk)->opaqueMesh.vbo));

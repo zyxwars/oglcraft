@@ -192,7 +192,7 @@ int main(void) {
                deltaTimeS, camera);
 
     // Fog color
-    CALL_GL(glClearColor(0.8f, 0.9f, 1.f, 1.f));
+    CALL_GL(glClearColor(1.f, 0.f, 0.f, 1.f));
     CALL_GL(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
 
     // model matrix is not used since chunks are static
@@ -231,7 +231,6 @@ int main(void) {
     CALL_GL(glBindBuffer(GL_ARRAY_BUFFER, 0));
     CALL_GL(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0));
 
-    // TOOD: unbind ebo from blocks
     glDepthMask(GL_FALSE);
 
     CALL_GL(glUseProgram(skyboxShaderProgram));
@@ -307,7 +306,7 @@ int main(void) {
     }
 
     for (int i = 0; i < chunksToRenderIndex; i++) {
-      DrawOpaque(chunksToRender[i]);
+      DrawChunkMesh(&(chunksToRender[i]->opaqueMesh));
     }
 
     // // Only blend translucent buffer
@@ -315,7 +314,45 @@ int main(void) {
     CALL_GL(glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA));
 
     for (int i = 0; i < chunksToRenderIndex; i++) {
-      DrawTranslucent(chunksToRender[i]);
+      // even this works..., wtf?
+      // DrawChunkMesh(&(chunksToRender[i]->opaqueMesh));
+
+      // TODO:
+      // DrawChunkMesh(&(chunksToRender[i]->translucentMesh));
+      struct Mesh* mesh = &(chunksToRender[i]->translucentMesh);
+
+      CALL_GL(glBindBuffer(GL_ARRAY_BUFFER, mesh->vbo));
+      CALL_GL(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh->ebo));
+
+      int stride = sizeof(struct Vertex);
+
+      CALL_GL(glEnableVertexAttribArray(0));
+      CALL_GL(glVertexAttribIPointer(0, 1, GL_INT, stride,
+                                     (void*)offsetof(struct Vertex, blockId)));
+
+      CALL_GL(glEnableVertexAttribArray(1));
+      CALL_GL(glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, stride,
+                                    (void*)offsetof(struct Vertex, position)));
+
+      CALL_GL(glEnableVertexAttribArray(2));
+      CALL_GL(glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, stride,
+                                    (void*)offsetof(struct Vertex, normal)));
+
+      CALL_GL(glEnableVertexAttribArray(3));
+      CALL_GL(glVertexAttribPointer(3, 2, GL_FLOAT, GL_FALSE, stride,
+                                    (void*)offsetof(struct Vertex, texCoords)));
+
+      CALL_GL(glDrawElements(GL_TRIANGLES, mesh->faceCount * 6, GL_UNSIGNED_INT,
+                             0));
+
+      // Whyyyyyyyyy
+      CALL_GL(glDisableVertexAttribArray(0));
+      CALL_GL(glDisableVertexAttribArray(1));
+      CALL_GL(glDisableVertexAttribArray(2));
+      CALL_GL(glDisableVertexAttribArray(3));
+
+      CALL_GL(glBindBuffer(GL_ARRAY_BUFFER, 0));
+      CALL_GL(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0));
     }
 
     free(chunksToRender);
