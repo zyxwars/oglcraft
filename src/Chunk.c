@@ -149,8 +149,9 @@ struct Chunk* CreateChunk(struct GenerationNoise* noise, int chunkX,
                             (z + (chunk->z * CHUNK_LENGTH)), 1, 2, 0.1f);
       humidity = (humidity + 1.f) / 2.f;
 
+      // TODO: skybox dissapears when worldY is about 15+
       continentalness = (continentalness + 1.f) / 2.f;
-      int worldY = continentalness * 5;
+      int worldY = continentalness * 32;
 
       enum Biome biome = BIOME_FOREST;
       if (humidity < 0.2f && temperature > 0.5f) {
