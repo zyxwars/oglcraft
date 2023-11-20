@@ -2,14 +2,9 @@
 
 #include <string.h>
 
-#define GLEW_STATIC
-#include <GL/glew.h>
-#include <GLFW/glfw3.h>
 #include <cglm/vec3.h>
 #include <cglm/vec2.h>
-#include <FastNoiseLite.h>
 
-#include "GlWrapper.h"
 #include "Chunk.h"
 
 enum BlockId {

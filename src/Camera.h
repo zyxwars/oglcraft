@@ -2,16 +2,11 @@
 
 #include <math.h>
 
-#define GLEW_STATIC
-#include <GL/glew.h>
-#include <GLFW/glfw3.h>
 #include <cglm/affine.h>
 #include <cglm/cam.h>
 #include <cglm/mat4.h>
 #include <cglm/vec2.h>
 #include <cglm/vec3.h>
-
-#include "GlWrapper.h"
 
 struct Transform {
   vec3 translation;

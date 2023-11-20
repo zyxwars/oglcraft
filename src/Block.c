@@ -14,29 +14,6 @@ const int blockSize = 16;
 const float AtlasW = 256.f;
 const float AtlasH = 256.f;
 
-// enum BlockId {
-//   BLOCK_AIR,
-//   BLOCK_GRASS,
-//   BLOCK_WATER,
-//   BLOCK_DIRT,
-//   BLOCK_OAK_LOG,
-//   BLOCK_LEAVES
-// };
-
-// struct Block {
-//   // front back top bottom left right
-//   ivec2 texCoord[6];
-//   // Which buffer the object belongs to
-//   int isOpaque;
-//   int isTranslucent;
-//   // Object is opaque but parts are fully transparent
-//   int isCutout;
-//   // Whether two same blocks next to each other will render their touching
-//   faces
-//   // i.e. leaves, chests will, glass won't
-//   int isSelfCulled;
-// };
-
 // TODO: Read in json
 // TODO: create on runtime
 const struct Block BlockTypes[] = {

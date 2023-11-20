@@ -25,6 +25,15 @@
 // #define _CRTDBG_MAP_ALLOC
 // #include<crtdbg.h>
 
+void GLAPIENTRY MessageCallback(GLenum source, GLenum type, GLuint id,
+                                GLenum severity, GLsizei length,
+                                const GLchar* message, const void* userParam) {
+  fprintf(stderr,
+          "GL CALLBACK: %s type = 0x%x, severity = 0x%x, message = %s\n",
+          (type == GL_DEBUG_TYPE_ERROR ? "** GL ERROR **" : ""), type, severity,
+          message);
+}
+
 int main(void) {
   // Init glfw
   GLFWwindow* window;
@@ -52,6 +61,9 @@ int main(void) {
 
   // Init gl
   printf("Status: Using GL %s\n", glGetString(GL_VERSION));
+
+  glEnable(GL_DEBUG_OUTPUT);
+  glDebugMessageCallback(MessageCallback, 0);
 
   CALL_GL(glEnable(GL_CULL_FACE));
   CALL_GL(glEnable(GL_DEPTH_TEST));
@@ -119,36 +131,37 @@ int main(void) {
   int loadedChunksSize = maxLoadedChunks;
   struct Chunk** loadedChunks = calloc(maxLoadedChunks, sizeof(struct Chunk*));
 
-  float skyboxVertices[] = {
-      // positions
-      -1.0f, 1.0f,  -1.0f, -1.0f, -1.0f, -1.0f, 1.0f,  -1.0f, -1.0f,
-      1.0f,  -1.0f, -1.0f, 1.0f,  1.0f,  -1.0f, -1.0f, 1.0f,  -1.0f,
+  // float skyboxVertices[] = {
+  //     // positions
+  //     -1.0f, 1.0f,  -1.0f, -1.0f, -1.0f, -1.0f, 1.0f,  -1.0f, -1.0f,
+  //     1.0f,  -1.0f, -1.0f, 1.0f,  1.0f,  -1.0f, -1.0f, 1.0f,  -1.0f,
 
-      -1.0f, -1.0f, 1.0f,  -1.0f, -1.0f, -1.0f, -1.0f, 1.0f,  -1.0f,
-      -1.0f, 1.0f,  -1.0f, -1.0f, 1.0f,  1.0f,  -1.0f, -1.0f, 1.0f,
+  //     -1.0f, -1.0f, 1.0f,  -1.0f, -1.0f, -1.0f, -1.0f, 1.0f,  -1.0f,
+  //     -1.0f, 1.0f,  -1.0f, -1.0f, 1.0f,  1.0f,  -1.0f, -1.0f, 1.0f,
 
-      1.0f,  -1.0f, -1.0f, 1.0f,  -1.0f, 1.0f,  1.0f,  1.0f,  1.0f,
-      1.0f,  1.0f,  1.0f,  1.0f,  1.0f,  -1.0f, 1.0f,  -1.0f, -1.0f,
+  //     1.0f,  -1.0f, -1.0f, 1.0f,  -1.0f, 1.0f,  1.0f,  1.0f,  1.0f,
+  //     1.0f,  1.0f,  1.0f,  1.0f,  1.0f,  -1.0f, 1.0f,  -1.0f, -1.0f,
 
-      -1.0f, -1.0f, 1.0f,  -1.0f, 1.0f,  1.0f,  1.0f,  1.0f,  1.0f,
-      1.0f,  1.0f,  1.0f,  1.0f,  -1.0f, 1.0f,  -1.0f, -1.0f, 1.0f,
+  //     -1.0f, -1.0f, 1.0f,  -1.0f, 1.0f,  1.0f,  1.0f,  1.0f,  1.0f,
+  //     1.0f,  1.0f,  1.0f,  1.0f,  -1.0f, 1.0f,  -1.0f, -1.0f, 1.0f,
 
-      -1.0f, 1.0f,  -1.0f, 1.0f,  1.0f,  -1.0f, 1.0f,  1.0f,  1.0f,
-      1.0f,  1.0f,  1.0f,  -1.0f, 1.0f,  1.0f,  -1.0f, 1.0f,  -1.0f,
+  //     -1.0f, 1.0f,  -1.0f, 1.0f,  1.0f,  -1.0f, 1.0f,  1.0f,  1.0f,
+  //     1.0f,  1.0f,  1.0f,  -1.0f, 1.0f,  1.0f,  -1.0f, 1.0f,  -1.0f,
 
-      -1.0f, -1.0f, -1.0f, -1.0f, -1.0f, 1.0f,  1.0f,  -1.0f, -1.0f,
-      1.0f,  -1.0f, -1.0f, -1.0f, -1.0f, 1.0f,  1.0f,  -1.0f, 1.0f};
+  //     -1.0f, -1.0f, -1.0f, -1.0f, -1.0f, 1.0f,  1.0f,  -1.0f, -1.0f,
+  //     1.0f,  -1.0f, -1.0f, -1.0f, -1.0f, 1.0f,  1.0f,  -1.0f, 1.0f};
 
-  GLuint skyboxShaderProgram = CreateShaderProgram(
-      "C:/Users/Zyxwa/Documents/code/oglc/src/shaders/skybox.vert",
-      "C:/Users/Zyxwa/Documents/code/oglc/src/shaders/skybox.frag");
+  // GLuint skyboxShaderProgram = CreateShaderProgram(
+  //     "C:/Users/Zyxwa/Documents/code/oglc/src/shaders/skybox.vert",
+  //     "C:/Users/Zyxwa/Documents/code/oglc/src/shaders/skybox.frag");
 
-  GLuint skyboxVbo;
-  // TODO: ebo
-  CALL_GL(glGenBuffers(1, &skyboxVbo));
-  CALL_GL(glBindBuffer(GL_ARRAY_BUFFER, skyboxVbo));
-  CALL_GL(glBufferData(GL_ARRAY_BUFFER, sizeof(skyboxVertices), skyboxVertices,
-                       GL_STATIC_DRAW));
+  // GLuint skyboxVbo;
+  // // TODO: ebo
+  // CALL_GL(glGenBuffers(1, &skyboxVbo));
+  // CALL_GL(glBindBuffer(GL_ARRAY_BUFFER, skyboxVbo));
+  // CALL_GL(glBufferData(GL_ARRAY_BUFFER, sizeof(skyboxVertices),
+  // skyboxVertices,
+  //                      GL_STATIC_DRAW));
 
   // Render loop
   while (!glfwWindowShouldClose(window)) {
@@ -193,53 +206,56 @@ int main(void) {
     // glm_mat4_inv(camera->projectionMatrix, projMatInv);
     // glm_mat4_inv(camera->viewMatrix, viewMatInv);
 
-    mat4 viewMatWithoutTranslation = {0};
-    viewMatWithoutTranslation[0][0] = camera->viewMatrix[0][0];
-    viewMatWithoutTranslation[0][1] = camera->viewMatrix[0][1];
-    viewMatWithoutTranslation[0][2] = camera->viewMatrix[0][2];
+    // mat4 viewMatWithoutTranslation = {0};
+    // viewMatWithoutTranslation[0][0] = camera->viewMatrix[0][0];
+    // viewMatWithoutTranslation[0][1] = camera->viewMatrix[0][1];
+    // viewMatWithoutTranslation[0][2] = camera->viewMatrix[0][2];
 
-    viewMatWithoutTranslation[1][0] = camera->viewMatrix[1][0];
-    viewMatWithoutTranslation[1][1] = camera->viewMatrix[1][1];
-    viewMatWithoutTranslation[1][2] = camera->viewMatrix[1][2];
+    // viewMatWithoutTranslation[1][0] = camera->viewMatrix[1][0];
+    // viewMatWithoutTranslation[1][1] = camera->viewMatrix[1][1];
+    // viewMatWithoutTranslation[1][2] = camera->viewMatrix[1][2];
 
-    viewMatWithoutTranslation[2][0] = camera->viewMatrix[2][0];
-    viewMatWithoutTranslation[2][1] = camera->viewMatrix[2][1];
-    viewMatWithoutTranslation[2][2] = camera->viewMatrix[2][2];
+    // viewMatWithoutTranslation[2][0] = camera->viewMatrix[2][0];
+    // viewMatWithoutTranslation[2][1] = camera->viewMatrix[2][1];
+    // viewMatWithoutTranslation[2][2] = camera->viewMatrix[2][2];
 
-    // TODO: why
-    viewMatWithoutTranslation[3][3] = 1;
+    // // TODO: why
+    // viewMatWithoutTranslation[3][3] = 1;
 
-    mat4 mvpWithoutTranslation;
-    glm_mat4_mulN(
-        (mat4*[]){&(camera->projectionMatrix), &viewMatWithoutTranslation}, 2,
-        mvpWithoutTranslation);
+    // mat4 mvpWithoutTranslation;
+    // glm_mat4_mulN(
+    //     (mat4*[]){&(camera->projectionMatrix), &viewMatWithoutTranslation},
+    //     2, mvpWithoutTranslation);
 
-    // unbind
-    CALL_GL(glBindBuffer(GL_ARRAY_BUFFER, 0));
-    CALL_GL(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0));
+    // // unbind
+    // CALL_GL(glBindBuffer(GL_ARRAY_BUFFER, 0));
+    // CALL_GL(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0));
 
-    // TOOD: unbind ebo from blocks
-    glDepthMask(GL_FALSE);
+    // // TOOD: unbind ebo from blocks
+    // glDepthMask(GL_FALSE);
 
-    CALL_GL(glUseProgram(skyboxShaderProgram));
+    // CALL_GL(glUseProgram(skyboxShaderProgram));
 
-    // only rotation mvp matrix
-    CALL_GL(GLint testUniform =
-                glGetUniformLocation(skyboxShaderProgram, "u_MVP"));
-    CALL_GL(
-        glUniformMatrix4fv(testUniform, 1, GL_FALSE, mvpWithoutTranslation[0]));
+    // // only rotation mvp matrix
+    // CALL_GL(GLint testUniform =
+    //             glGetUniformLocation(skyboxShaderProgram, "u_MVP"));
+    // CALL_GL(
+    //     glUniformMatrix4fv(testUniform, 1, GL_FALSE,
+    //     mvpWithoutTranslation[0]));
 
-    CALL_GL(glBindBuffer(GL_ARRAY_BUFFER, skyboxVbo));
-    CALL_GL(glEnableVertexAttribArray(0));
-    CALL_GL(glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0));
+    // CALL_GL(glBindBuffer(GL_ARRAY_BUFFER, skyboxVbo));
+    // CALL_GL(glEnableVertexAttribArray(0));
+    // CALL_GL(glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0));
 
-    CALL_GL(glDrawArrays(GL_TRIANGLES, 0, 36));
+    // CALL_GL(glDrawArrays(GL_TRIANGLES, 0, 36));
 
-    glDepthMask(GL_TRUE);
+    // glDepthMask(GL_TRUE);
 
-    // unbind
-    CALL_GL(glBindBuffer(GL_ARRAY_BUFFER, 0));
-    CALL_GL(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0));
+    // // unbind
+    // CALL_GL(glBindBuffer(GL_ARRAY_BUFFER, 0));
+    // CALL_GL(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0));
+
+    // glUseProgram(0);
 
     // Bind shader
     CALL_GL(glUseProgram(chunkShaderProgram));
@@ -309,6 +325,8 @@ int main(void) {
     // unbind
     CALL_GL(glBindBuffer(GL_ARRAY_BUFFER, 0));
     CALL_GL(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0));
+
+    glUseProgram(0);
 
     glfwSwapBuffers(window);
 

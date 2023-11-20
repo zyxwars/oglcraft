@@ -43,6 +43,9 @@ void CreateOpaqueMesh(struct Chunk* chunk) {
   vertices = NULL;
   triangles = NULL;
 
+  CALL_GL(glBindBuffer(GL_ARRAY_BUFFER, 0));
+  CALL_GL(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0));
+
   chunk->opaqueMesh.faceCount = currentFaceIndex;
 }
 
@@ -84,6 +87,9 @@ void CreateTranslucentMesh(struct Chunk* chunk) {
   free(triangles);
   vertices = NULL;
   triangles = NULL;
+
+  CALL_GL(glBindBuffer(GL_ARRAY_BUFFER, 0));
+  CALL_GL(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0));
 
   chunk->translucentMesh.faceCount = currentFaceIndex;
 }
@@ -151,7 +157,7 @@ struct Chunk* CreateChunk(struct GenerationNoise* noise, int chunkX,
 
       // TODO: skybox dissapears when worldY is about 15+
       continentalness = (continentalness + 1.f) / 2.f;
-      int worldY = continentalness * 32;
+      int worldY = continentalness * 31;
 
       enum Biome biome = BIOME_FOREST;
       if (humidity < 0.2f && temperature > 0.5f) {
@@ -326,6 +332,9 @@ void DrawChunkMesh(struct Mesh* mesh) {
 
   CALL_GL(
       glDrawElements(GL_TRIANGLES, mesh->faceCount * 6, GL_UNSIGNED_INT, 0));
+
+  CALL_GL(glBindBuffer(GL_ARRAY_BUFFER, 0));
+  CALL_GL(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0));
 }
 
 void DrawOpaque(struct Chunk* chunk) { DrawChunkMesh(&(chunk->opaqueMesh)); }
