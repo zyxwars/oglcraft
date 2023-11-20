@@ -13,7 +13,7 @@ set(GLEW_LINK_DIR "./dependencies/glew-2.1.0/lib/Release/Win32")
 set(FREETYPE_INCLUDE_DIR "./dependencies/FreeType/include")
 set(FREETYPE_LINK_DIR "./dependencies/FreeType/release static/vs2015-2022/win32")
 
-add_executable(oglc ./src/main.c ./src/Shader.c ./src/GlWrapper.c ./src/Chunk.c ./src/Block.c ./src/Camera.c)
+add_executable(oglc ./src/main.c ./src/Renderer/Shader.c ./src/Renderer/GlWrapper.c ./src/Terrain/Chunk.c ./src/Terrain/Block.c ./src/Camera.c)
 
 target_include_directories(oglc PUBLIC src includes ${GLFW_INCLUDE_DIR} ${GLEW_INCLUDE_DIR} ${FREETYPE_INCLUDE_DIR})
 target_link_directories(oglc PUBLIC ${GLFW_LINK_DIR} ${GLEW_LINK_DIR} ${FREETYPE_LINK_DIR})

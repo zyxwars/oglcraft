@@ -6,5 +6,7 @@ in vec3 out_TexCoords;
 
 void main()
 {    
-    FragColor = vec4(out_TexCoords, 1);
+    vec3 skyColor = vec3(1,1,1);
+    vec3 horizonColor = vec3(1,0,0);
+    FragColor = vec4(mix(horizonColor, skyColor,(out_TexCoords.y + 1)/2) * 0.7 + 0.3, 1);
 }

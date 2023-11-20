@@ -9,7 +9,7 @@
 #include <cglm/vec2.h>
 #include <FastNoiseLite.h>
 
-#include "GlWrapper.h"
+#include "Renderer/GlWrapper.h"
 #include "Block.h"
 
 #define CHUNK_LENGTH 16
