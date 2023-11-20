@@ -8,8 +8,8 @@ in vec2 out_TexCoords;
 uniform sampler2D texture1;
 
 // TODO: adjust based on real near and far plane
-float near = 1.f;
-float far = 100.f;
+float near = 0.1f;
+float far = 200.f;
 
 float LinearizeDepth(float depth) {
   // convert from [0,1] to [-1,1]

@@ -39,7 +39,7 @@ struct Camera* CreateCamera() {
 
   // TODO: base clipping on render distance
   // TODO: also adjust in shader
-  glm_perspective(45.f, 640.f / 480.f, 1.f, 8.f * 16.f,
+  glm_perspective(45.f, 640.f / 480.f, 0.1f, sqrt(2 * pow(9, 2)) * 16.f,
                   camera->projectionMatrix);
 
   // TODO: set in transform initializer ?
@@ -49,7 +49,7 @@ struct Camera* CreateCamera() {
   camera->transform.forward[1] = 0.f;
   camera->transform.forward[2] = -1.f;
 
-  SetTranslation(0, 32.f, 0, &(camera->transform));
+  SetTranslation(0, 0.f, 0, &(camera->transform));
   // The y rotation can exceed (-90,90) range
   SetRotation(-90.f, -89.f, 0, &(camera->transform));
 

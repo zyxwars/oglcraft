@@ -19,7 +19,8 @@ enum BlockId {
   BLOCK_DIRT,
   BLOCK_OAK_LOG,
   BLOCK_LEAVES,
-  BLOCK_STONE
+  BLOCK_STONE,
+  BLOCK_SAND
 };
 
 struct Block {

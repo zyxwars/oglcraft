@@ -35,15 +35,15 @@ void CreateOpaqueMesh(struct Chunk* chunk) {
   CALL_GL(glBufferData(GL_ARRAY_BUFFER,
                        sizeof(struct Vertex) * 4 * currentFaceIndex, vertices,
                        GL_STATIC_DRAW));
-  glBufferData(GL_ELEMENT_ARRAY_BUFFER,
-               sizeof(unsigned int) * 6 * currentFaceIndex, triangles,
-               GL_STATIC_DRAW);
+  CALL_GL(glBufferData(GL_ELEMENT_ARRAY_BUFFER,
+                       sizeof(unsigned int) * 6 * currentFaceIndex, triangles,
+                       GL_STATIC_DRAW));
   free(vertices);
   free(triangles);
   vertices = NULL;
   triangles = NULL;
 
-  chunk->opaqueFaceCount = currentFaceIndex;
+  chunk->opaqueMesh.faceCount = currentFaceIndex;
 }
 
 void CreateTranslucentMesh(struct Chunk* chunk) {
@@ -85,19 +85,20 @@ void CreateTranslucentMesh(struct Chunk* chunk) {
   vertices = NULL;
   triangles = NULL;
 
-  chunk->translucentFaceCount = currentFaceIndex;
+  chunk->translucentMesh.faceCount = currentFaceIndex;
 }
 
-float PerlinNoise(fnl_state* noiseState, float x, float z, int octaves,
-                  float persistence) {
+float SamplePerlinNoise(fnl_state* noiseState, float x, float z, int octaves,
+                        float persistence, float scale) {
   float total = 0;
   float frequency = 1;
   float amplitude = 1;
   float maxValue = 0;
 
   for (int i = 0; i < octaves; i++) {
-    total +=
-        fnlGetNoise2D(noiseState, x * frequency, z * frequency) * amplitude;
+    total += fnlGetNoise2D(noiseState, x * frequency * scale,
+                           z * frequency * scale) *
+             amplitude;
 
     maxValue += amplitude;
 
@@ -108,7 +109,25 @@ float PerlinNoise(fnl_state* noiseState, float x, float z, int octaves,
   return total / maxValue;
 }
 
-struct Chunk* CreateChunk(fnl_state* noiseState, int chunkX, int chunkZ) {
+float Lerp(float x, float x1, float x2, float y1, float y2) {
+  return y1 + (x - x1) * ((y2 - y1) / (x2 - x1));
+}
+
+int InterpolateHeight(float x) {
+  // if (x < 0.1f) {
+  //   return (int)Lerp(x, -1.f, 0.1f, 0, 30);
+  // } else if (x < 0.4f) {
+  //   return (int)Lerp(x, 0.1f, 0.4f, 30, 80);
+  // }
+
+  // return (int)Lerp(x, 0.4f, 1.f, 80, 85);
+  return x;
+}
+
+enum Biome { BIOME_FOREST, BIOME_DESERT };
+
+struct Chunk* CreateChunk(struct GenerationNoise* noise, int chunkX,
+                          int chunkZ) {
   struct Chunk* chunk = calloc(1, sizeof(struct Chunk));
   chunk->x = chunkX;
   chunk->z = chunkZ;
@@ -116,30 +135,50 @@ struct Chunk* CreateChunk(fnl_state* noiseState, int chunkX, int chunkZ) {
   // Populate chunk
   for (int x = 0; x < CHUNK_LENGTH; x++) {
     for (int z = 0; z < CHUNK_LENGTH; z++) {
-      float scale = 0.25f;
-      // float noise = fnlGetNoise2D(noiseState, x + chunk->x * CHUNK_LENGTH,
-      //                             z + chunk->z * CHUNK_LENGTH);
-      float noise =
-          PerlinNoise(noiseState, (x + (chunk->x * CHUNK_LENGTH)) * scale,
-                      (z + (chunk->z * CHUNK_LENGTH)) * scale, 4, 2);
+      float continentalness = SamplePerlinNoise(
+          &(noise->continentalness), (x + (chunk->x * CHUNK_LENGTH)),
+          (z + (chunk->z * CHUNK_LENGTH)), 4, 2, 0.1f);
 
-      noise = (noise + 1.f) / 2.f;
-      noise = (float)pow(noise, 2);
-      // TODO: crash when noise=1, move height down by 1
-      int height = noise * (CHUNK_HEIGHT - 1);
-      // avoid holes in the ground
-      if (height == 0) height = 1;
+      float temperature = SamplePerlinNoise(
+          &(noise->temperature), (x + (chunk->x * CHUNK_LENGTH)),
+          (z + (chunk->z * CHUNK_LENGTH)), 1, 2, 0.1f);
+      temperature = (temperature + 1.f) / 2.f;
 
-      chunk->blocks[PosToIndex(x, height, z)] = BLOCK_GRASS;
-      // Fill every block under height
-      for (int y = 0; y < height; y++) {
+      float humidity =
+          SamplePerlinNoise(&(noise->humidity), (x + (chunk->x * CHUNK_LENGTH)),
+                            (z + (chunk->z * CHUNK_LENGTH)), 1, 2, 0.1f);
+      humidity = (humidity + 1.f) / 2.f;
+
+      continentalness = (continentalness + 1.f) / 2.f;
+      int worldY = continentalness * 5;
+
+      enum Biome biome = BIOME_FOREST;
+      if (humidity < 0.2f && temperature > 0.5f) {
+        biome = BIOME_DESERT;
+      }
+
+      enum BlockId surfaceBlock;
+
+      switch (biome) {
+        case BIOME_FOREST:
+          surfaceBlock = BLOCK_GRASS;
+          break;
+        case BIOME_DESERT:
+          surfaceBlock = BLOCK_SAND;
+          break;
+      }
+
+      chunk->blocks[PosToIndex(x, worldY, z)] = surfaceBlock;
+
+      // Fill every block under height to a solid
+      for (int y = 0; y < worldY; y++) {
         chunk->blocks[PosToIndex(x, y, z)] = BLOCK_DIRT;
       }
     }
   }
 
   // Fill in water
-  int waterHeight = 5;
+  int waterHeight = 10;
   for (int y = 0; y < waterHeight; y++) {
     for (int x = 0; x < CHUNK_LENGTH; x++) {
       for (int z = 0; z < CHUNK_LENGTH; z++) {
@@ -150,18 +189,6 @@ struct Chunk* CreateChunk(fnl_state* noiseState, int chunkX, int chunkZ) {
       }
     }
   }
-
-  // Fill rocky mountaing
-  // int stoneHeight = 24;
-  // for (int y = stoneHeight; y < CHUNK_HEIGHT; y++) {
-  //   for (int x = 0; x < CHUNK_LENGTH; x++) {
-  //     for (int z = 0; z < CHUNK_LENGTH; z++) {
-  //       if (chunk->blocks[PosToIndex(x, y, z)] == BLOCK_AIR) continue;
-
-  //       chunk->blocks[PosToIndex(x, y, z)] = BLOCK_STONE;
-  //     }
-  //   }
-  // }
 
   // Turn blocks under water to dirt
   for (int y = 0; y < waterHeight - 1; y++) {
@@ -274,9 +301,9 @@ struct Chunk* CreateChunk(fnl_state* noiseState, int chunkX, int chunkZ) {
   return chunk;
 };
 
-void DrawOpaque(struct Chunk* chunk) {
-  CALL_GL(glBindBuffer(GL_ARRAY_BUFFER, chunk->opaqueMesh.vbo));
-  CALL_GL(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, chunk->opaqueMesh.ebo));
+void DrawChunkMesh(struct Mesh* mesh) {
+  CALL_GL(glBindBuffer(GL_ARRAY_BUFFER, mesh->vbo));
+  CALL_GL(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh->ebo));
 
   int stride = sizeof(struct Vertex);
 
@@ -296,34 +323,14 @@ void DrawOpaque(struct Chunk* chunk) {
   CALL_GL(glVertexAttribPointer(3, 2, GL_FLOAT, GL_FALSE, stride,
                                 (void*)offsetof(struct Vertex, texCoords)));
 
-  CALL_GL(glDrawElements(GL_TRIANGLES, chunk->opaqueFaceCount * 6,
-                         GL_UNSIGNED_INT, 0));
+  CALL_GL(
+      glDrawElements(GL_TRIANGLES, mesh->faceCount * 6, GL_UNSIGNED_INT, 0));
 }
 
+void DrawOpaque(struct Chunk* chunk) { DrawChunkMesh(&(chunk->opaqueMesh)); }
+
 void DrawTranslucent(struct Chunk* chunk) {
-  CALL_GL(glBindBuffer(GL_ARRAY_BUFFER, chunk->translucentMesh.vbo));
-  CALL_GL(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, chunk->translucentMesh.ebo));
-
-  int stride = sizeof(struct Vertex);
-
-  CALL_GL(glEnableVertexAttribArray(0));
-  CALL_GL(glVertexAttribIPointer(0, 1, GL_INT, stride,
-                                 (void*)offsetof(struct Vertex, blockId)));
-
-  CALL_GL(glEnableVertexAttribArray(1));
-  CALL_GL(glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, stride,
-                                (void*)offsetof(struct Vertex, position)));
-
-  CALL_GL(glEnableVertexAttribArray(2));
-  CALL_GL(glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, stride,
-                                (void*)offsetof(struct Vertex, normal)));
-
-  CALL_GL(glEnableVertexAttribArray(3));
-  CALL_GL(glVertexAttribPointer(3, 2, GL_FLOAT, GL_FALSE, stride,
-                                (void*)offsetof(struct Vertex, texCoords)));
-
-  CALL_GL(glDrawElements(GL_TRIANGLES, chunk->translucentFaceCount * 6,
-                         GL_UNSIGNED_INT, 0));
+  DrawChunkMesh(&(chunk->translucentMesh));
 };
 
 void DestroyChunk(struct Chunk** chunk) {
@@ -336,7 +343,7 @@ void DestroyChunk(struct Chunk** chunk) {
 }
 
 struct Chunk* GetChunk(int x, int z, struct Chunk** loadedChunks,
-                       int loadedChunksSize, fnl_state* noiseState) {
+                       int loadedChunksSize, struct GenerationNoise* noise) {
   // Use empty index to store new chunk
   int emptyIndex = -1;
   for (int i = 0; i < loadedChunksSize; i++) {
@@ -358,7 +365,7 @@ struct Chunk* GetChunk(int x, int z, struct Chunk** loadedChunks,
   }
 
   // Create chunk
-  struct Chunk* chunk = CreateChunk(noiseState, x, z);
+  struct Chunk* chunk = CreateChunk(noise, x, z);
   printf("Chunk: (%d, %d) created\n", chunk->x, chunk->z);
   loadedChunks[emptyIndex] = chunk;
 

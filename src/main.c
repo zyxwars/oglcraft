@@ -94,8 +94,19 @@ int main(void) {
   float lastTimeS = 0.f;
 
   // Create and configure noise state
-  fnl_state noise = fnlCreateState();
-  noise.noise_type = FNL_NOISE_OPENSIMPLEX2;
+  struct GenerationNoise generationNoise = {0};
+
+  generationNoise.continentalness = fnlCreateState();
+  generationNoise.continentalness.noiseType = FNL_NOISE_OPENSIMPLEX2;
+  generationNoise.continentalness.seed = 1;
+
+  generationNoise.temperature = fnlCreateState();
+  generationNoise.temperature.noiseType = FNL_NOISE_OPENSIMPLEX2;
+  generationNoise.temperature.seed = 2;
+
+  generationNoise.humidity = fnlCreateState();
+  generationNoise.humidity.noiseType = FNL_NOISE_OPENSIMPLEX2;
+  generationNoise.humidity.seed = 3;
 
   srand(1);
 
@@ -107,6 +118,37 @@ int main(void) {
   // TODO: free this and free chunks at program exit
   int loadedChunksSize = maxLoadedChunks;
   struct Chunk** loadedChunks = calloc(maxLoadedChunks, sizeof(struct Chunk*));
+
+  float skyboxVertices[] = {
+      // positions
+      -1.0f, 1.0f,  -1.0f, -1.0f, -1.0f, -1.0f, 1.0f,  -1.0f, -1.0f,
+      1.0f,  -1.0f, -1.0f, 1.0f,  1.0f,  -1.0f, -1.0f, 1.0f,  -1.0f,
+
+      -1.0f, -1.0f, 1.0f,  -1.0f, -1.0f, -1.0f, -1.0f, 1.0f,  -1.0f,
+      -1.0f, 1.0f,  -1.0f, -1.0f, 1.0f,  1.0f,  -1.0f, -1.0f, 1.0f,
+
+      1.0f,  -1.0f, -1.0f, 1.0f,  -1.0f, 1.0f,  1.0f,  1.0f,  1.0f,
+      1.0f,  1.0f,  1.0f,  1.0f,  1.0f,  -1.0f, 1.0f,  -1.0f, -1.0f,
+
+      -1.0f, -1.0f, 1.0f,  -1.0f, 1.0f,  1.0f,  1.0f,  1.0f,  1.0f,
+      1.0f,  1.0f,  1.0f,  1.0f,  -1.0f, 1.0f,  -1.0f, -1.0f, 1.0f,
+
+      -1.0f, 1.0f,  -1.0f, 1.0f,  1.0f,  -1.0f, 1.0f,  1.0f,  1.0f,
+      1.0f,  1.0f,  1.0f,  -1.0f, 1.0f,  1.0f,  -1.0f, 1.0f,  -1.0f,
+
+      -1.0f, -1.0f, -1.0f, -1.0f, -1.0f, 1.0f,  1.0f,  -1.0f, -1.0f,
+      1.0f,  -1.0f, -1.0f, -1.0f, -1.0f, 1.0f,  1.0f,  -1.0f, 1.0f};
+
+  GLuint skyboxShaderProgram = CreateShaderProgram(
+      "C:/Users/Zyxwa/Documents/code/oglc/src/shaders/skybox.vert",
+      "C:/Users/Zyxwa/Documents/code/oglc/src/shaders/skybox.frag");
+
+  GLuint skyboxVbo;
+  // TODO: ebo
+  CALL_GL(glGenBuffers(1, &skyboxVbo));
+  CALL_GL(glBindBuffer(GL_ARRAY_BUFFER, skyboxVbo));
+  CALL_GL(glBufferData(GL_ARRAY_BUFFER, sizeof(skyboxVertices), skyboxVertices,
+                       GL_STATIC_DRAW));
 
   // Render loop
   while (!glfwWindowShouldClose(window)) {
@@ -151,6 +193,54 @@ int main(void) {
     // glm_mat4_inv(camera->projectionMatrix, projMatInv);
     // glm_mat4_inv(camera->viewMatrix, viewMatInv);
 
+    mat4 viewMatWithoutTranslation = {0};
+    viewMatWithoutTranslation[0][0] = camera->viewMatrix[0][0];
+    viewMatWithoutTranslation[0][1] = camera->viewMatrix[0][1];
+    viewMatWithoutTranslation[0][2] = camera->viewMatrix[0][2];
+
+    viewMatWithoutTranslation[1][0] = camera->viewMatrix[1][0];
+    viewMatWithoutTranslation[1][1] = camera->viewMatrix[1][1];
+    viewMatWithoutTranslation[1][2] = camera->viewMatrix[1][2];
+
+    viewMatWithoutTranslation[2][0] = camera->viewMatrix[2][0];
+    viewMatWithoutTranslation[2][1] = camera->viewMatrix[2][1];
+    viewMatWithoutTranslation[2][2] = camera->viewMatrix[2][2];
+
+    // TODO: why
+    viewMatWithoutTranslation[3][3] = 1;
+
+    mat4 mvpWithoutTranslation;
+    glm_mat4_mulN(
+        (mat4*[]){&(camera->projectionMatrix), &viewMatWithoutTranslation}, 2,
+        mvpWithoutTranslation);
+
+    // unbind
+    CALL_GL(glBindBuffer(GL_ARRAY_BUFFER, 0));
+    CALL_GL(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0));
+
+    // TOOD: unbind ebo from blocks
+    glDepthMask(GL_FALSE);
+
+    CALL_GL(glUseProgram(skyboxShaderProgram));
+
+    // only rotation mvp matrix
+    CALL_GL(GLint testUniform =
+                glGetUniformLocation(skyboxShaderProgram, "u_MVP"));
+    CALL_GL(
+        glUniformMatrix4fv(testUniform, 1, GL_FALSE, mvpWithoutTranslation[0]));
+
+    CALL_GL(glBindBuffer(GL_ARRAY_BUFFER, skyboxVbo));
+    CALL_GL(glEnableVertexAttribArray(0));
+    CALL_GL(glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0));
+
+    CALL_GL(glDrawArrays(GL_TRIANGLES, 0, 36));
+
+    glDepthMask(GL_TRUE);
+
+    // unbind
+    CALL_GL(glBindBuffer(GL_ARRAY_BUFFER, 0));
+    CALL_GL(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0));
+
     // Bind shader
     CALL_GL(glUseProgram(chunkShaderProgram));
 
@@ -184,8 +274,9 @@ int main(void) {
         calloc(visibleChunkCount, sizeof(struct Chunk*));
     for (int x = -renderDistance; x <= renderDistance; x++) {
       for (int z = -renderDistance; z <= renderDistance; z++) {
-        struct Chunk* chunk = GetChunk(x + playerChunkX, z + playerChunkZ,
-                                       loadedChunks, loadedChunksSize, &noise);
+        struct Chunk* chunk =
+            GetChunk(x + playerChunkX, z + playerChunkZ, loadedChunks,
+                     loadedChunksSize, &generationNoise);
         // free space for new chunks
         // TODO: if loading too fast this leaves holes unloaded
         if (chunk == NULL) {
@@ -197,17 +288,14 @@ int main(void) {
         }
 
         chunksToRender[chunksToRenderIndex++] = chunk;
-        // DrawOpaque(chunk);
       }
     }
-
-    // Only blend translucent buffer
-    CALL_GL(glDisable(GL_BLEND));
 
     for (int i = 0; i < chunksToRenderIndex; i++) {
       DrawOpaque(chunksToRender[i]);
     }
 
+    // // Only blend translucent buffer
     CALL_GL(glEnable(GL_BLEND));
     CALL_GL(glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA));
 
@@ -216,6 +304,11 @@ int main(void) {
     }
 
     free(chunksToRender);
+    CALL_GL(glDisable(GL_BLEND));
+
+    // unbind
+    CALL_GL(glBindBuffer(GL_ARRAY_BUFFER, 0));
+    CALL_GL(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0));
 
     glfwSwapBuffers(window);
 

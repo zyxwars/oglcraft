@@ -150,7 +150,7 @@ typedef struct fnl_state {
    * The noise algorithm to be used by GetNoise(...).
    * @remark Default: FNL_NOISE_OPENSIMPLEX2
    */
-  fnl_noise_type noise_type;
+  fnl_noise_type noiseType;
 
   /**
    * Sets noise rotation type for 3D.
@@ -978,7 +978,7 @@ static float _fnlSingleValue3D(int seed, FNLfloat x, FNLfloat y, FNLfloat z);
 
 static float _fnlGenNoiseSingle2D(fnl_state *state, int seed, FNLfloat x,
                                   FNLfloat y) {
-  switch (state->noise_type) {
+  switch (state->noiseType) {
     case FNL_NOISE_OPENSIMPLEX2:
       return _fnlSingleSimplex2D(seed, x, y);
     case FNL_NOISE_OPENSIMPLEX2S:
@@ -998,7 +998,7 @@ static float _fnlGenNoiseSingle2D(fnl_state *state, int seed, FNLfloat x,
 
 static float _fnlGenNoiseSingle3D(fnl_state *state, int seed, FNLfloat x,
                                   FNLfloat y, FNLfloat z) {
-  switch (state->noise_type) {
+  switch (state->noiseType) {
     case FNL_NOISE_OPENSIMPLEX2:
       return _fnlSingleOpenSimplex23D(seed, x, y, z);
     case FNL_NOISE_OPENSIMPLEX2S:
@@ -1023,7 +1023,7 @@ static void _fnlTransformNoiseCoordinate2D(fnl_state *state, FNLfloat *x,
   *x *= state->frequency;
   *y *= state->frequency;
 
-  switch (state->noise_type) {
+  switch (state->noiseType) {
     case FNL_NOISE_OPENSIMPLEX2:
     case FNL_NOISE_OPENSIMPLEX2S: {
       const FNLfloat SQRT3 = (FNLfloat)1.7320508075688772935274463415059;
@@ -1061,7 +1061,7 @@ static void _fnlTransformNoiseCoordinate3D(fnl_state *state, FNLfloat *x,
       *y += xz * (FNLfloat)0.577350269189626;
     } break;
     default:
-      switch (state->noise_type) {
+      switch (state->noiseType) {
         case FNL_NOISE_OPENSIMPLEX2:
         case FNL_NOISE_OPENSIMPLEX2S: {
           const FNLfloat R3 = (FNLfloat)(2.0 / 3.0);
@@ -2727,7 +2727,7 @@ fnl_state fnlCreateState() {
   fnl_state newState;
   newState.seed = 1337;
   newState.frequency = 0.01f;
-  newState.noise_type = FNL_NOISE_OPENSIMPLEX2;
+  newState.noiseType = FNL_NOISE_OPENSIMPLEX2;
   newState.rotation_type_3d = FNL_ROTATION_NONE;
   newState.fractal_type = FNL_FRACTAL_NONE;
   newState.octaves = 3;
