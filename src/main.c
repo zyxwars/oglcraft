@@ -43,6 +43,8 @@ int main(void) {
   // display scaling
   glfwWindowHint(GLFW_SCALE_TO_MONITOR, GLFW_TRUE);
 
+  glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GLFW_TRUE);
+
   window = glfwCreateWindow(640, 480, "Hello World", NULL, NULL);
   if (!window) {
     glfwTerminate();
@@ -63,7 +65,10 @@ int main(void) {
   printf("Status: Using GL %s\n", glGetString(GL_VERSION));
 
   glEnable(GL_DEBUG_OUTPUT);
+  glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
   glDebugMessageCallback(MessageCallback, 0);
+  glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, NULL,
+                        GL_TRUE);
 
   CALL_GL(glEnable(GL_CULL_FACE));
   CALL_GL(glEnable(GL_DEPTH_TEST));
@@ -321,6 +326,9 @@ int main(void) {
       // DrawChunkMesh(&(chunksToRender[i]->translucentMesh));
       struct Mesh* mesh = &(chunksToRender[i]->translucentMesh);
 
+      // AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+      if (mesh->faceCount == 0) continue;
+
       CALL_GL(glBindBuffer(GL_ARRAY_BUFFER, mesh->vbo));
       CALL_GL(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh->ebo));
 
@@ -346,10 +354,12 @@ int main(void) {
                              0));
 
       // Whyyyyyyyyy
-      CALL_GL(glDisableVertexAttribArray(0));
-      CALL_GL(glDisableVertexAttribArray(1));
-      CALL_GL(glDisableVertexAttribArray(2));
-      CALL_GL(glDisableVertexAttribArray(3));
+      // TODO:
+      // test why this works when not disabling when rendering opaque
+      // CALL_GL(glDisableVertexAttribArray(0));
+      // CALL_GL(glDisableVertexAttribArray(1));
+      // CALL_GL(glDisableVertexAttribArray(2));
+      // CALL_GL(glDisableVertexAttribArray(3));
 
       CALL_GL(glBindBuffer(GL_ARRAY_BUFFER, 0));
       CALL_GL(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0));
