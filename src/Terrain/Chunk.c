@@ -6,11 +6,32 @@ int PosToIndex(int x, int y, int z) {
 
 // TODO: create update function
 void CreateOpaqueMesh(struct Chunk* chunk) {
+  CALL_GL(glGenVertexArrays(1, &(chunk->opaqueMesh.vao)));
+  CALL_GL(glBindVertexArray(chunk->opaqueMesh.vao));
+
   CALL_GL(glGenBuffers(1, &(chunk->opaqueMesh.vbo)));
   CALL_GL(glBindBuffer(GL_ARRAY_BUFFER, chunk->opaqueMesh.vbo));
 
   CALL_GL(glGenBuffers(1, &(chunk->opaqueMesh.ebo)));
   CALL_GL(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, chunk->opaqueMesh.ebo));
+
+  int stride = sizeof(struct Vertex);
+
+  CALL_GL(glEnableVertexAttribArray(0));
+  CALL_GL(glVertexAttribIPointer(0, 1, GL_INT, stride,
+                                 (void*)offsetof(struct Vertex, blockId)));
+
+  CALL_GL(glEnableVertexAttribArray(1));
+  CALL_GL(glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, stride,
+                                (void*)offsetof(struct Vertex, position)));
+
+  CALL_GL(glEnableVertexAttribArray(2));
+  CALL_GL(glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, stride,
+                                (void*)offsetof(struct Vertex, normal)));
+
+  CALL_GL(glEnableVertexAttribArray(3));
+  CALL_GL(glVertexAttribPointer(3, 2, GL_FLOAT, GL_FALSE, stride,
+                                (void*)offsetof(struct Vertex, texCoords)));
 
   // TODO: allocate in a less wasteful way?
   const int maxFacesInChunk = ((int)CHUNK_VOLUME * 6);
@@ -43,18 +64,38 @@ void CreateOpaqueMesh(struct Chunk* chunk) {
   vertices = NULL;
   triangles = NULL;
 
-  CALL_GL(glBindBuffer(GL_ARRAY_BUFFER, 0));
-  CALL_GL(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0));
+  CALL_GL(glBindVertexArray(0));
 
   chunk->opaqueMesh.faceCount = currentFaceIndex;
 }
 
 void CreateTranslucentMesh(struct Chunk* chunk) {
+  CALL_GL(glGenVertexArrays(1, &(chunk->translucentMesh.vao)));
+  CALL_GL(glBindVertexArray(chunk->translucentMesh.vao));
+
   CALL_GL(glGenBuffers(1, &(chunk->translucentMesh.vbo)));
   CALL_GL(glBindBuffer(GL_ARRAY_BUFFER, chunk->translucentMesh.vbo));
 
   CALL_GL(glGenBuffers(1, &(chunk->translucentMesh.ebo)));
   CALL_GL(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, chunk->translucentMesh.ebo));
+
+  int stride = sizeof(struct Vertex);
+
+  CALL_GL(glEnableVertexAttribArray(0));
+  CALL_GL(glVertexAttribIPointer(0, 1, GL_INT, stride,
+                                 (void*)offsetof(struct Vertex, blockId)));
+
+  CALL_GL(glEnableVertexAttribArray(1));
+  CALL_GL(glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, stride,
+                                (void*)offsetof(struct Vertex, position)));
+
+  CALL_GL(glEnableVertexAttribArray(2));
+  CALL_GL(glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, stride,
+                                (void*)offsetof(struct Vertex, normal)));
+
+  CALL_GL(glEnableVertexAttribArray(3));
+  CALL_GL(glVertexAttribPointer(3, 2, GL_FLOAT, GL_FALSE, stride,
+                                (void*)offsetof(struct Vertex, texCoords)));
 
   // TODO: allocate in a less wasteful way?
   const int maxFacesInChunk = ((int)CHUNK_VOLUME * 6);
@@ -88,8 +129,7 @@ void CreateTranslucentMesh(struct Chunk* chunk) {
   vertices = NULL;
   triangles = NULL;
 
-  CALL_GL(glBindBuffer(GL_ARRAY_BUFFER, 0));
-  CALL_GL(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0));
+  CALL_GL(glBindVertexArray(0));
 
   chunk->translucentMesh.faceCount = currentFaceIndex;
 }
@@ -145,59 +185,149 @@ struct Chunk* CreateChunk(struct GenerationNoise* noise, int chunkX,
           &(noise->continentalness), (x + (chunk->x * CHUNK_LENGTH)),
           (z + (chunk->z * CHUNK_LENGTH)), 4, 2, 0.1f);
 
-      // float temperature = SamplePerlinNoise(
-      //     &(noise->temperature), (x + (chunk->x * CHUNK_LENGTH)),
-      //     (z + (chunk->z * CHUNK_LENGTH)), 1, 2, 0.1f);
-      // temperature = (temperature + 1.f) / 2.f;
+      float temperature = SamplePerlinNoise(
+          &(noise->temperature), (x + (chunk->x * CHUNK_LENGTH)),
+          (z + (chunk->z * CHUNK_LENGTH)), 1, 2, 0.1f);
+      temperature = (temperature + 1.f) / 2.f;
 
-      // float humidity =
-      //     SamplePerlinNoise(&(noise->humidity), (x + (chunk->x *
-      //     CHUNK_LENGTH)),
-      //                       (z + (chunk->z * CHUNK_LENGTH)), 1, 2, 0.1f);
-      // humidity = (humidity + 1.f) / 2.f;
+      float humidity =
+          SamplePerlinNoise(&(noise->humidity), (x + (chunk->x * CHUNK_LENGTH)),
+                            (z + (chunk->z * CHUNK_LENGTH)), 1, 2, 0.1f);
+      humidity = (humidity + 1.f) / 2.f;
 
-      // TODO: skybox dissapears when worldY is about 15+
       continentalness = (continentalness + 1.f) / 2.f;
       int worldY = continentalness * (CHUNK_HEIGHT - 1);
 
-      // enum Biome biome = BIOME_FOREST;
-      // if (humidity < 0.2f && temperature > 0.5f) {
-      //   biome = BIOME_DESERT;
-      // }
+      enum Biome biome = BIOME_FOREST;
+      if (humidity < 0.2f && temperature > 0.5f) {
+        biome = BIOME_DESERT;
+      }
 
       enum BlockId surfaceBlock = BLOCK_STONE;
 
-      // TODO:
-      // switch (biome) {
-      //   case BIOME_FOREST:
-      //     surfaceBlock = BLOCK_GRASS;
-      //     break;
-      //   case BIOME_DESERT:
-      //     surfaceBlock = BLOCK_SAND;
-      //     break;
-      // }
+      switch (biome) {
+        case BIOME_FOREST:
+          surfaceBlock = BLOCK_GRASS;
+          break;
+        case BIOME_DESERT:
+          surfaceBlock = BLOCK_SAND;
+          break;
+      }
 
       chunk->blocks[PosToIndex(x, worldY, z)] = surfaceBlock;
 
       // Fill every block under height to a solid
       for (int y = 0; y < worldY; y++) {
-        chunk->blocks[PosToIndex(x, y, z)] = BLOCK_STONE;
+        chunk->blocks[PosToIndex(x, y, z)] = surfaceBlock;
       }
     }
   }
 
   // Fill in water
-  // int waterHeight = 20;
-  // for (int y = 0; y < waterHeight; y++) {
-  //   for (int x = 0; x < CHUNK_LENGTH; x++) {
-  //     for (int z = 0; z < CHUNK_LENGTH; z++) {
-  //       // Fill air blocks with water
-  //       if (chunk->blocks[PosToIndex(x, y, z)] == BLOCK_AIR) {
-  //         chunk->blocks[PosToIndex(x, y, z)] = BLOCK_WATER;
-  //       }
-  //     }
-  //   }
-  // }
+  int waterHeight = 10;
+  for (int y = 0; y < waterHeight; y++) {
+    for (int x = 0; x < CHUNK_LENGTH; x++) {
+      for (int z = 0; z < CHUNK_LENGTH; z++) {
+        // Fill air blocks with water
+        if (chunk->blocks[PosToIndex(x, y, z)] == BLOCK_AIR) {
+          chunk->blocks[PosToIndex(x, y, z)] = BLOCK_WATER;
+        }
+      }
+    }
+  }
+
+  // Don't spawn on chunk boundaries
+  int treeX = rand() % (CHUNK_LENGTH - 4) + 2;
+  int treeZ = rand() % (CHUNK_LENGTH - 4) + 2;
+
+  for (int y = 0; y < CHUNK_HEIGHT - 8; y++) {
+    // Block is air
+    if (chunk->blocks[PosToIndex(treeX, y, treeZ)] != BLOCK_AIR) continue;
+
+    // Spawn trunk only on grass
+    if (chunk->blocks[PosToIndex(treeX, y - 1, treeZ)] != BLOCK_GRASS) continue;
+
+    // Turn grass to dirt
+    chunk->blocks[PosToIndex(treeX, y - 1, treeZ)] = BLOCK_DIRT;
+
+    // Trunk
+    chunk->blocks[PosToIndex(treeX, y, treeZ)] = BLOCK_OAK_LOG;
+    chunk->blocks[PosToIndex(treeX, y + 1, treeZ)] = BLOCK_OAK_LOG;
+    chunk->blocks[PosToIndex(treeX, y + 2, treeZ)] = BLOCK_OAK_LOG;
+    chunk->blocks[PosToIndex(treeX, y + 3, treeZ)] = BLOCK_OAK_LOG;
+    chunk->blocks[PosToIndex(treeX, y + 4, treeZ)] = BLOCK_OAK_LOG;
+    chunk->blocks[PosToIndex(treeX, y + 5, treeZ)] = BLOCK_OAK_LOG;
+
+    // Leaves
+    // From top layer
+    chunk->blocks[PosToIndex(treeX, y + 6, treeZ)] = BLOCK_LEAVES;
+    chunk->blocks[PosToIndex(treeX + 1, y + 6, treeZ)] = BLOCK_LEAVES;
+    chunk->blocks[PosToIndex(treeX - 1, y + 6, treeZ)] = BLOCK_LEAVES;
+    chunk->blocks[PosToIndex(treeX, y + 6, treeZ - 1)] = BLOCK_LEAVES;
+    chunk->blocks[PosToIndex(treeX, y + 6, treeZ + 1)] = BLOCK_LEAVES;
+
+    //
+    chunk->blocks[PosToIndex(treeX + 1, y + 5, treeZ)] = BLOCK_LEAVES;
+    chunk->blocks[PosToIndex(treeX - 1, y + 5, treeZ)] = BLOCK_LEAVES;
+    chunk->blocks[PosToIndex(treeX, y + 5, treeZ - 1)] = BLOCK_LEAVES;
+    chunk->blocks[PosToIndex(treeX, y + 5, treeZ + 1)] = BLOCK_LEAVES;
+
+    //
+    chunk->blocks[PosToIndex(treeX + 1, y + 4, treeZ + 2)] = BLOCK_LEAVES;
+    chunk->blocks[PosToIndex(treeX + 0, y + 4, treeZ + 2)] = BLOCK_LEAVES;
+    chunk->blocks[PosToIndex(treeX + -1, y + 4, treeZ + 2)] = BLOCK_LEAVES;
+
+    chunk->blocks[PosToIndex(treeX + 2, y + 4, treeZ + 1)] = BLOCK_LEAVES;
+    chunk->blocks[PosToIndex(treeX + 1, y + 4, treeZ + 1)] = BLOCK_LEAVES;
+    chunk->blocks[PosToIndex(treeX + 0, y + 4, treeZ + 1)] = BLOCK_LEAVES;
+    chunk->blocks[PosToIndex(treeX + -1, y + 4, treeZ + 1)] = BLOCK_LEAVES;
+    chunk->blocks[PosToIndex(treeX + -2, y + 4, treeZ + 1)] = BLOCK_LEAVES;
+
+    chunk->blocks[PosToIndex(treeX + 2, y + 4, treeZ + 0)] = BLOCK_LEAVES;
+    chunk->blocks[PosToIndex(treeX + 1, y + 4, treeZ + 0)] = BLOCK_LEAVES;
+    chunk->blocks[PosToIndex(treeX + -1, y + 4, treeZ + 0)] = BLOCK_LEAVES;
+    chunk->blocks[PosToIndex(treeX + -2, y + 4, treeZ + 0)] = BLOCK_LEAVES;
+
+    chunk->blocks[PosToIndex(treeX + 2, y + 4, treeZ - 1)] = BLOCK_LEAVES;
+    chunk->blocks[PosToIndex(treeX + 1, y + 4, treeZ - 1)] = BLOCK_LEAVES;
+    chunk->blocks[PosToIndex(treeX + 0, y + 4, treeZ - 1)] = BLOCK_LEAVES;
+    chunk->blocks[PosToIndex(treeX + -1, y + 4, treeZ - 1)] = BLOCK_LEAVES;
+    chunk->blocks[PosToIndex(treeX + -2, y + 4, treeZ - 1)] = BLOCK_LEAVES;
+
+    chunk->blocks[PosToIndex(treeX + 1, y + 4, treeZ - 2)] = BLOCK_LEAVES;
+    chunk->blocks[PosToIndex(treeX + 0, y + 4, treeZ - 2)] = BLOCK_LEAVES;
+    chunk->blocks[PosToIndex(treeX + -1, y + 4, treeZ - 2)] = BLOCK_LEAVES;
+
+    //
+    chunk->blocks[PosToIndex(treeX + 2, y + 3, treeZ + 2)] = BLOCK_LEAVES;
+    chunk->blocks[PosToIndex(treeX + 1, y + 3, treeZ + 2)] = BLOCK_LEAVES;
+    chunk->blocks[PosToIndex(treeX + 0, y + 3, treeZ + 2)] = BLOCK_LEAVES;
+    chunk->blocks[PosToIndex(treeX + -1, y + 3, treeZ + 2)] = BLOCK_LEAVES;
+    chunk->blocks[PosToIndex(treeX + -2, y + 3, treeZ + 2)] = BLOCK_LEAVES;
+
+    chunk->blocks[PosToIndex(treeX + 2, y + 3, treeZ + 1)] = BLOCK_LEAVES;
+    chunk->blocks[PosToIndex(treeX + 1, y + 3, treeZ + 1)] = BLOCK_LEAVES;
+    chunk->blocks[PosToIndex(treeX + 0, y + 3, treeZ + 1)] = BLOCK_LEAVES;
+    chunk->blocks[PosToIndex(treeX + -1, y + 3, treeZ + 1)] = BLOCK_LEAVES;
+    chunk->blocks[PosToIndex(treeX + -2, y + 3, treeZ + 1)] = BLOCK_LEAVES;
+
+    chunk->blocks[PosToIndex(treeX + 2, y + 3, treeZ + 0)] = BLOCK_LEAVES;
+    chunk->blocks[PosToIndex(treeX + 1, y + 3, treeZ + 0)] = BLOCK_LEAVES;
+    chunk->blocks[PosToIndex(treeX + -1, y + 3, treeZ + 0)] = BLOCK_LEAVES;
+    chunk->blocks[PosToIndex(treeX + -2, y + 3, treeZ + 0)] = BLOCK_LEAVES;
+
+    chunk->blocks[PosToIndex(treeX + 2, y + 3, treeZ - 1)] = BLOCK_LEAVES;
+    chunk->blocks[PosToIndex(treeX + 1, y + 3, treeZ - 1)] = BLOCK_LEAVES;
+    chunk->blocks[PosToIndex(treeX + 0, y + 3, treeZ - 1)] = BLOCK_LEAVES;
+    chunk->blocks[PosToIndex(treeX + -1, y + 3, treeZ - 1)] = BLOCK_LEAVES;
+    chunk->blocks[PosToIndex(treeX + -2, y + 3, treeZ - 1)] = BLOCK_LEAVES;
+
+    chunk->blocks[PosToIndex(treeX + 2, y + 3, treeZ - 2)] = BLOCK_LEAVES;
+    chunk->blocks[PosToIndex(treeX + 1, y + 3, treeZ - 2)] = BLOCK_LEAVES;
+    chunk->blocks[PosToIndex(treeX + 0, y + 3, treeZ - 2)] = BLOCK_LEAVES;
+    chunk->blocks[PosToIndex(treeX + -1, y + 3, treeZ - 2)] = BLOCK_LEAVES;
+    chunk->blocks[PosToIndex(treeX + -2, y + 3, treeZ - 2)] = BLOCK_LEAVES;
+  }
 
   CreateOpaqueMesh(chunk);
   CreateTranslucentMesh(chunk);
@@ -206,32 +336,12 @@ struct Chunk* CreateChunk(struct GenerationNoise* noise, int chunkX,
 };
 
 void DrawChunkMesh(struct Mesh* mesh) {
-  CALL_GL(glBindBuffer(GL_ARRAY_BUFFER, mesh->vbo));
-  CALL_GL(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh->ebo));
-
-  int stride = sizeof(struct Vertex);
-
-  CALL_GL(glEnableVertexAttribArray(0));
-  CALL_GL(glVertexAttribIPointer(0, 1, GL_INT, stride,
-                                 (void*)offsetof(struct Vertex, blockId)));
-
-  CALL_GL(glEnableVertexAttribArray(1));
-  CALL_GL(glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, stride,
-                                (void*)offsetof(struct Vertex, position)));
-
-  CALL_GL(glEnableVertexAttribArray(2));
-  CALL_GL(glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, stride,
-                                (void*)offsetof(struct Vertex, normal)));
-
-  CALL_GL(glEnableVertexAttribArray(3));
-  CALL_GL(glVertexAttribPointer(3, 2, GL_FLOAT, GL_FALSE, stride,
-                                (void*)offsetof(struct Vertex, texCoords)));
+  CALL_GL(glBindVertexArray(mesh->vao))
 
   CALL_GL(
       glDrawElements(GL_TRIANGLES, mesh->faceCount * 6, GL_UNSIGNED_INT, 0));
 
-  CALL_GL(glBindBuffer(GL_ARRAY_BUFFER, 0));
-  CALL_GL(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0));
+  CALL_GL(glBindVertexArray(0))
 }
 
 void DestroyChunk(struct Chunk** chunk) {

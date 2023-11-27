@@ -81,11 +81,6 @@ int main(void) {
     LOG("Texture", "Couldn't load texture from file");
   }
 
-  // single vao for the whole app
-  GLuint vao;
-  CALL_GL(glGenVertexArrays(1, &vao));
-  CALL_GL(glBindVertexArray(vao));
-
   // TODO: bind in loop
   GLuint texture;
   CALL_GL(glGenTextures(1, &texture));
@@ -319,50 +314,14 @@ int main(void) {
     CALL_GL(glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA));
 
     for (int i = 0; i < chunksToRenderIndex; i++) {
-      // even this works..., wtf?
-      // DrawChunkMesh(&(chunksToRender[i]->opaqueMesh));
-
-      // TODO:
-      // DrawChunkMesh(&(chunksToRender[i]->translucentMesh));
-      struct Mesh* mesh = &(chunksToRender[i]->translucentMesh);
+      // struct Mesh* mesh = &(chunksToRender[i]->translucentMesh);
 
       // AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-      if (mesh->faceCount == 0) continue;
+      // if (mesh->faceCount == 0) continue;
 
-      CALL_GL(glBindBuffer(GL_ARRAY_BUFFER, mesh->vbo));
-      CALL_GL(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh->ebo));
+      DrawChunkMesh(&(chunksToRender[i]->translucentMesh));
 
-      int stride = sizeof(struct Vertex);
-
-      CALL_GL(glEnableVertexAttribArray(0));
-      CALL_GL(glVertexAttribIPointer(0, 1, GL_INT, stride,
-                                     (void*)offsetof(struct Vertex, blockId)));
-
-      CALL_GL(glEnableVertexAttribArray(1));
-      CALL_GL(glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, stride,
-                                    (void*)offsetof(struct Vertex, position)));
-
-      CALL_GL(glEnableVertexAttribArray(2));
-      CALL_GL(glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, stride,
-                                    (void*)offsetof(struct Vertex, normal)));
-
-      CALL_GL(glEnableVertexAttribArray(3));
-      CALL_GL(glVertexAttribPointer(3, 2, GL_FLOAT, GL_FALSE, stride,
-                                    (void*)offsetof(struct Vertex, texCoords)));
-
-      CALL_GL(glDrawElements(GL_TRIANGLES, mesh->faceCount * 6, GL_UNSIGNED_INT,
-                             0));
-
-      // Whyyyyyyyyy
-      // TODO:
-      // test why this works when not disabling when rendering opaque
-      // CALL_GL(glDisableVertexAttribArray(0));
-      // CALL_GL(glDisableVertexAttribArray(1));
-      // CALL_GL(glDisableVertexAttribArray(2));
-      // CALL_GL(glDisableVertexAttribArray(3));
-
-      CALL_GL(glBindBuffer(GL_ARRAY_BUFFER, 0));
-      CALL_GL(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0));
+      CALL_GL(glBindVertexArray(0))
     }
 
     free(chunksToRender);

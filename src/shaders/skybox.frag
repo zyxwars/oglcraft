@@ -14,6 +14,5 @@ void main()
     // TODO: this works, but normalize() doesn't
     float a = out_TexCoords.y / sqrt(pow(out_TexCoords.x,2) + pow(out_TexCoords.y,2) + pow(out_TexCoords.z,2));
 
-    // FragColor = vec4(mix(horizonColor, skyColor, a), 1);
-    FragColor = vec4(1,1,0,1);
+    FragColor = vec4(mix(horizonColor, skyColor, a), 1);
 }
