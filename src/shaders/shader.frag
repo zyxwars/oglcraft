@@ -36,7 +36,7 @@ void main() {
 
   // Get z depth and divide by far to get [0,1] range
   float linearDepthNormalized = LinearizeDepth(gl_FragCoord.z) / far;
-  float fogFactor = ExpSquaredFog(linearDepthNormalized, 2.0f);
+  float fogFactor = ExpSquaredFog(linearDepthNormalized, 3.0f);
 
   // Set colors
   vec3 lightColor = vec3(1, 1, 0.8);

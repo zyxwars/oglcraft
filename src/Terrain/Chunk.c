@@ -36,8 +36,8 @@ void CreateOpaqueMesh(struct Chunk* chunk) {
   // TODO: allocate in a less wasteful way?
   const int maxFacesInChunk = ((int)CHUNK_VOLUME * 6);
 
-  struct Vertex* vertices = malloc(maxFacesInChunk * 4 * sizeof(struct Vertex));
-  unsigned int* triangles = malloc(maxFacesInChunk * 6 * sizeof(unsigned int));
+  struct Vertex* vertices = calloc(maxFacesInChunk * 4, sizeof(struct Vertex));
+  unsigned int* triangles = calloc(maxFacesInChunk * 6, sizeof(unsigned int));
 
   int currentFaceIndex = 0;
   for (int x = 0; x < CHUNK_LENGTH; x++) {
@@ -100,8 +100,8 @@ void CreateTranslucentMesh(struct Chunk* chunk) {
   // TODO: allocate in a less wasteful way?
   const int maxFacesInChunk = ((int)CHUNK_VOLUME * 6);
 
-  struct Vertex* vertices = malloc(maxFacesInChunk * 4 * sizeof(struct Vertex));
-  unsigned int* triangles = malloc(maxFacesInChunk * 6 * sizeof(unsigned int));
+  struct Vertex* vertices = calloc(maxFacesInChunk * 4, sizeof(struct Vertex));
+  unsigned int* triangles = calloc(maxFacesInChunk * 6, sizeof(unsigned int));
 
   int currentFaceIndex = 0;
   for (int x = 0; x < CHUNK_LENGTH; x++) {
@@ -231,6 +231,18 @@ struct Chunk* CreateChunk(struct GenerationNoise* noise, int chunkX,
         // Fill air blocks with water
         if (chunk->blocks[PosToIndex(x, y, z)] == BLOCK_AIR) {
           chunk->blocks[PosToIndex(x, y, z)] = BLOCK_WATER;
+        }
+      }
+    }
+  }
+
+  // Turn blocks under water to dirt
+  for (int y = 0; y < waterHeight - 1; y++) {
+    for (int x = 0; x < CHUNK_LENGTH; x++) {
+      for (int z = 0; z < CHUNK_LENGTH; z++) {
+        if (chunk->blocks[PosToIndex(x, y + 1, z)] == BLOCK_WATER &&
+            chunk->blocks[PosToIndex(x, y, z)] != BLOCK_WATER) {
+          chunk->blocks[PosToIndex(x, y, z)] = BLOCK_GRAVEL;
         }
       }
     }
