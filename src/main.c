@@ -367,35 +367,46 @@ int main(void) {
       glm_vec3_add(hitPos, camera->transform.translation, hitPos);
       currentStep += step;
 
-      // TODO: -1 fixes problem only in one direction
-      ivec2 hitChunkPos = {(int)floor(hitPos[0] / (CHUNK_LENGTH - 1)),
-                           (int)floor(hitPos[2] / (CHUNK_LENGTH - 1))};
-
-      struct Chunk* hitChunk =
-          GetChunk(hitChunkPos[0], hitChunkPos[1], loadedChunks,
-                   loadedChunksSize, &generationNoise);
-
-      ivec2 posInChunk = {(int)round(hitPos[0]) % CHUNK_LENGTH,
-                          (int)round(hitPos[2]) % CHUNK_LENGTH};
-
-      // TODO: do more clearly
-      // flip negative to positive chunk pos
-      if (posInChunk[0] < 0) {
-        posInChunk[0] = CHUNK_LENGTH + posInChunk[0] - 1;
-      }
-      if (posInChunk[1] < 0) {
-        posInChunk[1] = CHUNK_LENGTH + posInChunk[1] - 1;
-      }
-
-      unsigned int hitBlock = hitChunk->blocks[PosToIndex(
-          posInChunk[0], (int)round(hitPos[1]), posInChunk[1])];
-
-      if (hitBlock == 0) continue;
-
       selectionPos[0] = (int)round(hitPos[0]);
       selectionPos[1] = (int)round(hitPos[1]);
       selectionPos[2] = (int)round(hitPos[2]);
+
+      ivec2 selectionChunkPos = {
+          (int)floor((float)selectionPos[0] / (CHUNK_LENGTH)),
+          (int)floor((float)selectionPos[2] / (CHUNK_LENGTH))};
+
+      struct Chunk* hitChunk =
+          GetChunk(selectionChunkPos[0], selectionChunkPos[1], loadedChunks,
+                   loadedChunksSize, &generationNoise);
+
+      ivec3 selectionInChunkPos = {0};
+      selectionInChunkPos[1] = selectionPos[1];
+
+      if (selectionPos[0] < 0) {
+        selectionInChunkPos[0] =
+            (CHUNK_LENGTH - abs(selectionPos[0])) % CHUNK_LENGTH;
+      } else {
+        selectionInChunkPos[0] = (selectionPos[0]) % CHUNK_LENGTH;
+      }
+
+      if (selectionPos[2] < 0) {
+        selectionInChunkPos[2] =
+            (CHUNK_LENGTH - abs(selectionPos[2])) % CHUNK_LENGTH;
+      } else {
+        selectionInChunkPos[2] = (selectionPos[2]) % CHUNK_LENGTH;
+      }
+
+      unsigned int selectedBlock = hitChunk->blocks[PosToIndex(
+          selectionInChunkPos[0], selectionInChunkPos[1],
+          selectionInChunkPos[2])];
+
+      if (selectedBlock == 0) continue;
       isHit = 1;
+
+      printf("%d %d %d %d %d [%d %d %d]\n", selectionPos[0], selectionPos[1],
+             selectionPos[2], selectionChunkPos[0], selectionChunkPos[1],
+             selectionInChunkPos[0], selectionInChunkPos[1],
+             selectionInChunkPos[2]);
 
       break;
     }
@@ -406,10 +417,10 @@ int main(void) {
 
       mat4 selectionMvp;
       mat4 selectionModelMat = GLM_MAT4_IDENTITY_INIT;
-      glm_mat4_scale(selectionModelMat, 0.6f);
-      selectionModelMat[3][0] = selectionPos[0];
-      selectionModelMat[3][1] = selectionPos[1];
-      selectionModelMat[3][2] = selectionPos[2];
+      glm_mat4_scale(selectionModelMat, 0.51f);
+      selectionModelMat[3][0] = (float)selectionPos[0];
+      selectionModelMat[3][1] = (float)selectionPos[1];
+      selectionModelMat[3][2] = (float)selectionPos[2];
       selectionModelMat[3][3] = 1;
 
       glm_mat4_mulN((mat4*[]){&(camera->projectionMatrix),
@@ -422,7 +433,9 @@ int main(void) {
       CALL_GL(glUniformMatrix4fv(selectionMvpUniform, 1, GL_FALSE,
                                  selectionMvp[0]));
 
-      CALL_GL(glDrawArrays(GL_TRIANGLES, 0, 36));
+      CALL_GL(glLineWidth(2.f));
+      CALL_GL(glDrawArrays(GL_LINES, 0, 36));
+      CALL_GL(glLineWidth(1.f));
 
       CALL_GL(glBindVertexArray(0));
       CALL_GL(glUseProgram(0));
