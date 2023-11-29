@@ -200,6 +200,9 @@ int main(void) {
 
   CALL_GL(glBindVertexArray(0));
 
+  float breakCooldownS = 0.2f;
+  float lastBreakTimeS = 0.f;
+
   // Render loop
   while (!glfwWindowShouldClose(window)) {
     float currentTimeS = (float)glfwGetTime();
@@ -408,6 +411,18 @@ int main(void) {
              selectionPos[2], selectionChunkPos[0], selectionChunkPos[1],
              selectionInChunkPos[0], selectionInChunkPos[1],
              selectionInChunkPos[2]);
+
+      if (currentTimeS - lastBreakTimeS < breakCooldownS) break;
+
+      if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_1) == GLFW_PRESS) {
+        // TODO: don't do this raw
+        hitChunk
+            ->blocks[PosToIndex(selectionInChunkPos[0], selectionInChunkPos[1],
+                                selectionInChunkPos[2])] = 0;
+
+        lastBreakTimeS = currentTimeS;
+        UpdateOpaqueMesh(hitChunk);
+      }
 
       break;
     }

@@ -41,6 +41,8 @@ struct Chunk {
 // TODO: move to utils or something more general
 int PosToIndex(int x, int y, int z);
 
+void UpdateOpaqueMesh(struct Chunk* chunk);
+
 struct Chunk* CreateChunk(struct GenerationNoise* noiseState, int x, int z);
 
 void DestroyChunk(struct Chunk** chunk);

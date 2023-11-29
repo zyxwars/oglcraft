@@ -134,6 +134,49 @@ void CreateTranslucentMesh(struct Chunk* chunk) {
   chunk->translucentMesh.faceCount = currentFaceIndex;
 }
 
+void UpdateOpaqueMesh(struct Chunk* chunk) {
+  CALL_GL(glBindVertexArray(chunk->opaqueMesh.vao));
+
+  CALL_GL(glBindBuffer(GL_ARRAY_BUFFER, chunk->opaqueMesh.vbo));
+
+  CALL_GL(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, chunk->opaqueMesh.ebo));
+
+  // TODO: allocate in a less wasteful way?
+  const int maxFacesInChunk = ((int)CHUNK_VOLUME * 6);
+
+  struct Vertex* vertices = calloc(maxFacesInChunk * 4, sizeof(struct Vertex));
+  unsigned int* triangles = calloc(maxFacesInChunk * 6, sizeof(unsigned int));
+
+  int currentFaceIndex = 0;
+  for (int x = 0; x < CHUNK_LENGTH; x++) {
+    for (int y = 0; y < CHUNK_HEIGHT; y++) {
+      for (int z = 0; z < CHUNK_LENGTH; z++) {
+        AddToOpaqueBuffer(chunk->blocks, x, y, z, x + chunk->x * CHUNK_LENGTH,
+                          z + chunk->z * CHUNK_LENGTH, &currentFaceIndex,
+                          vertices, triangles);
+      }
+    }
+  }
+
+  // We copy only the existing vertices based on face index
+  // ignoring the rest of data that is garbage, allocated for the worst case
+  // when culling faces
+  CALL_GL(glBufferData(GL_ARRAY_BUFFER,
+                       sizeof(struct Vertex) * 4 * currentFaceIndex, vertices,
+                       GL_STATIC_DRAW));
+  CALL_GL(glBufferData(GL_ELEMENT_ARRAY_BUFFER,
+                       sizeof(unsigned int) * 6 * currentFaceIndex, triangles,
+                       GL_STATIC_DRAW));
+  free(vertices);
+  free(triangles);
+  vertices = NULL;
+  triangles = NULL;
+
+  CALL_GL(glBindVertexArray(0));
+
+  chunk->opaqueMesh.faceCount = currentFaceIndex;
+}
+
 float SamplePerlinNoise(fnl_state* noiseState, float x, float z, int octaves,
                         float persistence, float scale) {
   float total = 0;
