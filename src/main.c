@@ -364,6 +364,7 @@ int main(void) {
     float currentStep = 0.f;
     int isHit = 0;
     ivec3 selectionPos = {0};
+    ivec3 lastStepPos = {0};
     while (currentStep < rayDistance) {
       vec3 hitPos;
       glm_vec3_scale(camera->transform.forward, currentStep, hitPos);
@@ -404,7 +405,13 @@ int main(void) {
           selectionInChunkPos[0], selectionInChunkPos[1],
           selectionInChunkPos[2])];
 
-      if (selectedBlock == 0) continue;
+      if (selectedBlock == 0) {
+        lastStepPos[0] = selectionPos[0];
+        lastStepPos[1] = selectionPos[1];
+        lastStepPos[2] = selectionPos[2];
+        continue;
+      }
+
       isHit = 1;
 
       printf("%d %d %d %d %d [%d %d %d]\n", selectionPos[0], selectionPos[1],
@@ -412,9 +419,9 @@ int main(void) {
              selectionInChunkPos[0], selectionInChunkPos[1],
              selectionInChunkPos[2]);
 
-      if (currentTimeS - lastBreakTimeS < breakCooldownS) break;
-
       if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_1) == GLFW_PRESS) {
+        if (currentTimeS - lastBreakTimeS < breakCooldownS) break;
+
         // TODO: don't do this raw
         hitChunk
             ->blocks[PosToIndex(selectionInChunkPos[0], selectionInChunkPos[1],
@@ -422,6 +429,50 @@ int main(void) {
 
         lastBreakTimeS = currentTimeS;
         UpdateOpaqueMesh(hitChunk);
+
+        break;
+      }
+
+      if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_2) == GLFW_PRESS) {
+        if (currentTimeS - lastBreakTimeS < breakCooldownS) break;
+
+        ivec2 testChunkPos = {
+            (int)floor((float)lastStepPos[0] / (CHUNK_LENGTH)),
+            (int)floor((float)lastStepPos[2] / (CHUNK_LENGTH))};
+
+        struct Chunk* testChunk =
+            GetChunk(testChunkPos[0], testChunkPos[1], loadedChunks,
+                     loadedChunksSize, &generationNoise);
+
+        ivec3 testInChunkPos = {0};
+        testInChunkPos[1] = lastStepPos[1];
+
+        if (lastStepPos[0] < 0) {
+          testInChunkPos[0] = CHUNK_LENGTH + ((lastStepPos[0]) % CHUNK_LENGTH);
+        } else {
+          testInChunkPos[0] = (lastStepPos[0]) % CHUNK_LENGTH;
+        }
+
+        if (lastStepPos[2] < 0) {
+          testInChunkPos[2] = CHUNK_LENGTH + ((lastStepPos[2]) % CHUNK_LENGTH);
+        } else {
+          testInChunkPos[2] = (lastStepPos[2]) % CHUNK_LENGTH;
+        }
+
+        unsigned int testBlock = testChunk->blocks[PosToIndex(
+            testInChunkPos[0], testInChunkPos[1], testInChunkPos[2])];
+
+        // TODO:
+        if (testBlock != 0) break;
+
+        // TODO: don't do this raw
+        testChunk->blocks[PosToIndex(testInChunkPos[0], testInChunkPos[1],
+                                     testInChunkPos[2])] = 1;
+
+        lastBreakTimeS = currentTimeS;
+        UpdateOpaqueMesh(testChunk);
+
+        break;
       }
 
       break;
