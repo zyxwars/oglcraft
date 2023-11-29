@@ -379,19 +379,20 @@ int main(void) {
           GetChunk(selectionChunkPos[0], selectionChunkPos[1], loadedChunks,
                    loadedChunksSize, &generationNoise);
 
+      // TODO: broken for chunk over 1
       ivec3 selectionInChunkPos = {0};
       selectionInChunkPos[1] = selectionPos[1];
 
       if (selectionPos[0] < 0) {
         selectionInChunkPos[0] =
-            (CHUNK_LENGTH - abs(selectionPos[0])) % CHUNK_LENGTH;
+            CHUNK_LENGTH + ((selectionPos[0]) % CHUNK_LENGTH);
       } else {
         selectionInChunkPos[0] = (selectionPos[0]) % CHUNK_LENGTH;
       }
 
       if (selectionPos[2] < 0) {
         selectionInChunkPos[2] =
-            (CHUNK_LENGTH - abs(selectionPos[2])) % CHUNK_LENGTH;
+            CHUNK_LENGTH + ((selectionPos[2]) % CHUNK_LENGTH);
       } else {
         selectionInChunkPos[2] = (selectionPos[2]) % CHUNK_LENGTH;
       }
@@ -433,9 +434,12 @@ int main(void) {
       CALL_GL(glUniformMatrix4fv(selectionMvpUniform, 1, GL_FALSE,
                                  selectionMvp[0]));
 
-      CALL_GL(glLineWidth(2.f));
-      CALL_GL(glDrawArrays(GL_LINES, 0, 36));
-      CALL_GL(glLineWidth(1.f));
+      CALL_GL(glEnable(GL_BLEND));
+      CALL_GL(glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA));
+
+      CALL_GL(glDrawArrays(GL_TRIANGLES, 0, 36));
+
+      CALL_GL(glDisable(GL_BLEND));
 
       CALL_GL(glBindVertexArray(0));
       CALL_GL(glUseProgram(0));
