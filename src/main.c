@@ -203,6 +203,38 @@ int main(void) {
   float breakCooldownS = 0.2f;
   float lastBreakTimeS = 0.f;
 
+  // Held block
+  float heldItemVertices[] = {
+      -1.0f, -1.0f, -1.0f, -1.0f, -1.0f, 1.0f,  -1.0f, 1.0f,  1.0f,  1.0f,
+      1.0f,  -1.0f, -1.0f, -1.0f, -1.0f, -1.0f, 1.0f,  -1.0f, 1.0f,  -1.0f,
+      1.0f,  -1.0f, -1.0f, -1.0f, 1.0f,  -1.0f, -1.0f, 1.0f,  1.0f,  -1.0f,
+      1.0f,  -1.0f, -1.0f, -1.0f, -1.0f, -1.0f, -1.0f, -1.0f, -1.0f, -1.0f,
+      1.0f,  1.0f,  -1.0f, 1.0f,  -1.0f, 1.0f,  -1.0f, 1.0f,  -1.0f, -1.0f,
+      1.0f,  -1.0f, -1.0f, -1.0f, -1.0f, 1.0f,  1.0f,  -1.0f, -1.0f, 1.0f,
+      1.0f,  -1.0f, 1.0f,  1.0f,  1.0f,  1.0f,  1.0f,  -1.0f, -1.0f, 1.0f,
+      1.0f,  -1.0f, 1.0f,  -1.0f, -1.0f, 1.0f,  1.0f,  1.0f,  1.0f,  -1.0f,
+      1.0f,  1.0f,  1.0f,  1.0f,  1.0f,  1.0f,  -1.0f, -1.0f, 1.0f,  -1.0f,
+      1.0f,  1.0f,  1.0f,  -1.0f, 1.0f,  -1.0f, -1.0f, 1.0f,  1.0f,  1.0f,
+      1.0f,  1.0f,  -1.0f, 1.0f,  1.0f,  1.0f,  -1.0f, 1.0f};
+
+  GLuint heldItemShaderProgram = CreateShaderProgram(
+      "C:/Users/Zyxwa/Documents/code/oglc/src/shaders/heldItem.vert",
+      "C:/Users/Zyxwa/Documents/code/oglc/src/shaders/heldItem.frag");
+
+  GLuint heldItemVao;
+  CALL_GL(glGenVertexArrays(1, &heldItemVao));
+  CALL_GL(glBindVertexArray(heldItemVao));
+
+  GLuint heldItemVbo;
+  CALL_GL(glGenBuffers(1, &heldItemVbo));
+  CALL_GL(glBindBuffer(GL_ARRAY_BUFFER, heldItemVbo));
+  CALL_GL(glBufferData(GL_ARRAY_BUFFER, sizeof(heldItemVertices),
+                       heldItemVertices, GL_STATIC_DRAW));
+  CALL_GL(glEnableVertexAttribArray(0));
+  CALL_GL(glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0));
+
+  CALL_GL(glBindVertexArray(0));
+
   // Render loop
   while (!glfwWindowShouldClose(window)) {
     float currentTimeS = (float)glfwGetTime();
@@ -357,7 +389,7 @@ int main(void) {
     glUseProgram(0);
 
     // TODO: raycast
-    // TODO: broken at chunk borders
+    // TODO: broken at chunk borders still
     // figure out how to properly calculate hit pos in chunk and actual chunk
     float rayDistance = 10.f;
     float step = 0.1f;
@@ -510,6 +542,35 @@ int main(void) {
       CALL_GL(glBindVertexArray(0));
       CALL_GL(glUseProgram(0));
     }
+
+    CALL_GL(glClear(GL_DEPTH_BUFFER_BIT));
+    CALL_GL(glUseProgram(heldItemShaderProgram));
+    CALL_GL(glBindVertexArray(heldItemVao));
+
+    mat4 heldItemMvp;
+    mat4 heldItemModelMat = GLM_MAT4_IDENTITY_INIT;
+    heldItemModelMat[3][0] = 3.f;
+    heldItemModelMat[3][1] = -2.f;
+    heldItemModelMat[3][2] = -7.f;
+    heldItemModelMat[3][3] = 1;
+    glm_mat4_mulN((mat4*[]){&(camera->projectionMatrix), &heldItemModelMat}, 2,
+                  heldItemMvp);
+
+    // mvp matrix
+    CALL_GL(GLint heldItemMvpUniform =
+                glGetUniformLocation(heldItemShaderProgram, "u_MVP"));
+    CALL_GL(
+        glUniformMatrix4fv(heldItemMvpUniform, 1, GL_FALSE, heldItemMvp[0]));
+
+    CALL_GL(glEnable(GL_BLEND));
+    CALL_GL(glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA));
+
+    CALL_GL(glDrawArrays(GL_TRIANGLES, 0, 36));
+
+    CALL_GL(glDisable(GL_BLEND));
+
+    CALL_GL(glBindVertexArray(0));
+    CALL_GL(glUseProgram(0));
 
     glfwSwapBuffers(window);
 
