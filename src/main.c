@@ -404,7 +404,7 @@ int main(void) {
       currentStep += step;
 
       selectionPos[0] = (int)round(hitPos[0]);
-      selectionPos[1] = (int)round(hitPos[1]);
+      selectionPos[1] = (int)floor(hitPos[1]);
       selectionPos[2] = (int)round(hitPos[2]);
 
       ivec2 selectionChunkPos = {
@@ -420,15 +420,20 @@ int main(void) {
       selectionInChunkPos[1] = selectionPos[1];
 
       if (selectionPos[0] < 0) {
-        selectionInChunkPos[0] =
-            CHUNK_LENGTH + ((selectionPos[0]) % CHUNK_LENGTH);
+        selectionInChunkPos[0] = abs(selectionPos[0] % CHUNK_LENGTH);
+        if (selectionInChunkPos[0] != 0) {
+          selectionInChunkPos[0] = CHUNK_LENGTH - selectionInChunkPos[0];
+        }
+
       } else {
         selectionInChunkPos[0] = (selectionPos[0]) % CHUNK_LENGTH;
       }
 
       if (selectionPos[2] < 0) {
-        selectionInChunkPos[2] =
-            CHUNK_LENGTH + ((selectionPos[2]) % CHUNK_LENGTH);
+        selectionInChunkPos[2] = abs(selectionPos[2] % CHUNK_LENGTH);
+        if (selectionInChunkPos[2] != 0) {
+          selectionInChunkPos[2] = CHUNK_LENGTH - selectionInChunkPos[2];
+        }
       } else {
         selectionInChunkPos[2] = (selectionPos[2]) % CHUNK_LENGTH;
       }
