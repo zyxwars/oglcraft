@@ -1,14 +1,5 @@
 #include "Block.h"
 
-enum BlockFace {
-  BLOCK_FACE_FRONT,
-  BLOCK_FACE_BACK,
-  BLOCK_FACE_TOP,
-  BLOCK_FACE_BOTTOM,
-  BLOCK_FACE_LEFT,
-  BLOCK_FACE_RIGHT,
-};
-
 const int blockSize = 16;
 
 const float AtlasW = 256.f;
@@ -220,7 +211,6 @@ void AddFaceToBuffer(unsigned int blockId, enum BlockFace blockFace, int worldX,
 
   // Set face position based on cube position
   for (int i = 0; i < 4; i++) {
-    // TODO: multiply by chunk as well
     currentVertexStart[i].position[0] += worldX;
     currentVertexStart[i].position[1] += worldY;
     currentVertexStart[i].position[2] += worldZ;

@@ -204,18 +204,34 @@ int main(void) {
   float lastBreakTimeS = 0.f;
 
   // Held block
-  float heldItemVertices[] = {
-      -1.0f, -1.0f, -1.0f, -1.0f, -1.0f, 1.0f,  -1.0f, 1.0f,  1.0f,  1.0f,
-      1.0f,  -1.0f, -1.0f, -1.0f, -1.0f, -1.0f, 1.0f,  -1.0f, 1.0f,  -1.0f,
-      1.0f,  -1.0f, -1.0f, -1.0f, 1.0f,  -1.0f, -1.0f, 1.0f,  1.0f,  -1.0f,
-      1.0f,  -1.0f, -1.0f, -1.0f, -1.0f, -1.0f, -1.0f, -1.0f, -1.0f, -1.0f,
-      1.0f,  1.0f,  -1.0f, 1.0f,  -1.0f, 1.0f,  -1.0f, 1.0f,  -1.0f, -1.0f,
-      1.0f,  -1.0f, -1.0f, -1.0f, -1.0f, 1.0f,  1.0f,  -1.0f, -1.0f, 1.0f,
-      1.0f,  -1.0f, 1.0f,  1.0f,  1.0f,  1.0f,  1.0f,  -1.0f, -1.0f, 1.0f,
-      1.0f,  -1.0f, 1.0f,  -1.0f, -1.0f, 1.0f,  1.0f,  1.0f,  1.0f,  -1.0f,
-      1.0f,  1.0f,  1.0f,  1.0f,  1.0f,  1.0f,  -1.0f, -1.0f, 1.0f,  -1.0f,
-      1.0f,  1.0f,  1.0f,  -1.0f, 1.0f,  -1.0f, -1.0f, 1.0f,  1.0f,  1.0f,
-      1.0f,  1.0f,  -1.0f, 1.0f,  1.0f,  1.0f,  -1.0f, 1.0f};
+  struct Vertex heldItemVertices[6 * 4] = {0};
+  unsigned int heldItemTriangles[6 * 6] = {0};
+
+  int heldItemcurrentFaceIndex = 0;
+
+  AddFaceToBuffer(BLOCK_GRASS, BLOCK_FACE_TOP, 0, 0, 0,
+                  &heldItemcurrentFaceIndex, heldItemVertices,
+                  heldItemTriangles);
+
+  AddFaceToBuffer(BLOCK_GRASS, BLOCK_FACE_BOTTOM, 0, 0, 0,
+                  &heldItemcurrentFaceIndex, heldItemVertices,
+                  heldItemTriangles);
+
+  AddFaceToBuffer(BLOCK_GRASS, BLOCK_FACE_RIGHT, 0, 0, 0,
+                  &heldItemcurrentFaceIndex, heldItemVertices,
+                  heldItemTriangles);
+
+  AddFaceToBuffer(BLOCK_GRASS, BLOCK_FACE_LEFT, 0, 0, 0,
+                  &heldItemcurrentFaceIndex, heldItemVertices,
+                  heldItemTriangles);
+
+  AddFaceToBuffer(BLOCK_GRASS, BLOCK_FACE_FRONT, 0, 0, 0,
+                  &heldItemcurrentFaceIndex, heldItemVertices,
+                  heldItemTriangles);
+
+  AddFaceToBuffer(BLOCK_GRASS, BLOCK_FACE_BACK, 0, 0, 0,
+                  &heldItemcurrentFaceIndex, heldItemVertices,
+                  heldItemTriangles);
 
   GLuint heldItemShaderProgram = CreateShaderProgram(
       "C:/Users/Zyxwa/Documents/code/oglc/src/shaders/heldItem.vert",
@@ -226,12 +242,56 @@ int main(void) {
   CALL_GL(glBindVertexArray(heldItemVao));
 
   GLuint heldItemVbo;
-  CALL_GL(glGenBuffers(1, &heldItemVbo));
+  CALL_GL(glGenBuffers(1, &(heldItemVbo)));
   CALL_GL(glBindBuffer(GL_ARRAY_BUFFER, heldItemVbo));
-  CALL_GL(glBufferData(GL_ARRAY_BUFFER, sizeof(heldItemVertices),
-                       heldItemVertices, GL_STATIC_DRAW));
+
+  GLuint heldItemEbo;
+  CALL_GL(glGenBuffers(1, &(heldItemEbo)));
+  CALL_GL(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, heldItemEbo));
+
+  int stride = sizeof(struct Vertex);
+
   CALL_GL(glEnableVertexAttribArray(0));
-  CALL_GL(glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0));
+  CALL_GL(glVertexAttribIPointer(0, 1, GL_INT, stride,
+                                 (void*)offsetof(struct Vertex, blockId)));
+
+  CALL_GL(glEnableVertexAttribArray(1));
+  CALL_GL(glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, stride,
+                                (void*)offsetof(struct Vertex, position)));
+
+  CALL_GL(glEnableVertexAttribArray(2));
+  CALL_GL(glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, stride,
+                                (void*)offsetof(struct Vertex, normal)));
+
+  CALL_GL(glEnableVertexAttribArray(3));
+  CALL_GL(glVertexAttribPointer(3, 2, GL_FLOAT, GL_FALSE, stride,
+                                (void*)offsetof(struct Vertex, texCoords)));
+
+  CALL_GL(glBufferData(GL_ARRAY_BUFFER, sizeof(struct Vertex) * 4 * 6,
+                       heldItemVertices, GL_STATIC_DRAW));
+  CALL_GL(glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned int) * 6 * 6,
+                       heldItemTriangles, GL_STATIC_DRAW));
+
+  CALL_GL(glBindVertexArray(0));
+
+  float crosshairScale = 0.02f;
+  float crosshairVertices[] = {
+      -1.f * crosshairScale, -1.f * crosshairScale, 1.f * crosshairScale,
+      -1.f * crosshairScale, 1.f * crosshairScale,  1.f * crosshairScale,
+      1.f * crosshairScale,  1.f * crosshairScale,  -1.f * crosshairScale,
+      1.f * crosshairScale,  -1.f * crosshairScale, -1.f * crosshairScale};
+
+  GLuint crosshairVao;
+  CALL_GL(glGenVertexArrays(1, &crosshairVao));
+  CALL_GL(glBindVertexArray(crosshairVao));
+
+  GLuint crosshairVbo;
+  CALL_GL(glGenBuffers(1, &crosshairVbo));
+  CALL_GL(glBindBuffer(GL_ARRAY_BUFFER, crosshairVbo));
+  CALL_GL(glBufferData(GL_ARRAY_BUFFER, sizeof(crosshairVertices),
+                       crosshairVertices, GL_STATIC_DRAW));
+  CALL_GL(glEnableVertexAttribArray(0));
+  CALL_GL(glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, 0));
 
   CALL_GL(glBindVertexArray(0));
 
@@ -404,8 +464,11 @@ int main(void) {
       currentStep += step;
 
       selectionPos[0] = (int)round(hitPos[0]);
-      selectionPos[1] = (int)floor(hitPos[1]);
+      selectionPos[1] = (int)round(hitPos[1]);
       selectionPos[2] = (int)round(hitPos[2]);
+
+      // TODO:
+      if (selectionPos[1] >= CHUNK_HEIGHT) continue;
 
       ivec2 selectionChunkPos = {
           (int)floor((float)selectionPos[0] / (CHUNK_LENGTH)),
@@ -548,6 +611,7 @@ int main(void) {
       CALL_GL(glUseProgram(0));
     }
 
+    // Held item
     CALL_GL(glClear(GL_DEPTH_BUFFER_BIT));
     CALL_GL(glUseProgram(heldItemShaderProgram));
     CALL_GL(glBindVertexArray(heldItemVao));
@@ -570,10 +634,17 @@ int main(void) {
     CALL_GL(glEnable(GL_BLEND));
     CALL_GL(glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA));
 
-    CALL_GL(glDrawArrays(GL_TRIANGLES, 0, 36));
+    CALL_GL(glDrawElements(GL_TRIANGLES, 6 * 6, GL_UNSIGNED_INT, 0));
 
     CALL_GL(glDisable(GL_BLEND));
 
+    CALL_GL(glBindVertexArray(0));
+    CALL_GL(glUseProgram(0));
+
+    // Crosshair
+    CALL_GL(glClear(GL_DEPTH_BUFFER_BIT));
+    CALL_GL(glBindVertexArray(crosshairVao));
+    CALL_GL(glDrawArrays(GL_TRIANGLES, 0, 6));
     CALL_GL(glBindVertexArray(0));
     CALL_GL(glUseProgram(0));
 

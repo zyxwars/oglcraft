@@ -7,6 +7,15 @@
 
 #include "Chunk.h"
 
+enum BlockFace {
+  BLOCK_FACE_FRONT,
+  BLOCK_FACE_BACK,
+  BLOCK_FACE_TOP,
+  BLOCK_FACE_BOTTOM,
+  BLOCK_FACE_LEFT,
+  BLOCK_FACE_RIGHT,
+};
+
 enum BlockId {
   BLOCK_AIR,
   BLOCK_GRASS,
@@ -39,6 +48,10 @@ struct Vertex {
   vec3 normal;
   vec2 texCoords;
 };
+
+void AddFaceToBuffer(unsigned int blockId, enum BlockFace blockFace, int worldX,
+                     int worldY, int worldZ, int* currentFaceIndex,
+                     struct Vertex* vertices, unsigned int* triangles);
 
 void AddToOpaqueBuffer(unsigned int* chunkData, int x, int y, int z, int worldX,
                        int worldZ, int* currentFaceIndex,
