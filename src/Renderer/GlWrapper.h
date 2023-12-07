@@ -18,3 +18,10 @@
   LogGLError(__FILE__, __LINE__);
 
 int LogGLError(const char* file, int line);
+
+struct Mesh {
+  GLuint vao;
+  GLuint vbo;
+  GLuint ebo;
+  int faceCount;
+};

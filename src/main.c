@@ -7,19 +7,19 @@
 #include <GLFW/glfw3.h>
 
 #define STB_IMAGE_IMPLEMENTATION
-#include <stb_image.h>
-
 #include <cglm/affine.h>
 #include <cglm/mat4.h>
 #include <cglm/vec2.h>
 #include <cglm/vec3.h>
+#include <stb_image.h>
 #define FNL_IMPL
 #include <FastNoiseLite.h>
 
+#include "Camera.h"
 #include "Renderer/GlWrapper.h"
 #include "Renderer/Shader.h"
+#include "Renderer/Skybox.h"
 #include "Terrain/Chunk.h"
-#include "Camera.h"
 // #include "Text.h"
 
 // #define _CRTDBG_MAP_ALLOC
@@ -131,43 +131,7 @@ int main(void) {
   int loadedChunksSize = maxLoadedChunks;
   struct Chunk** loadedChunks = calloc(maxLoadedChunks, sizeof(struct Chunk*));
 
-  float skyboxVertices[] = {
-      // positions
-      -1.0f, 1.0f,  -1.0f, -1.0f, -1.0f, -1.0f, 1.0f,  -1.0f, -1.0f,
-      1.0f,  -1.0f, -1.0f, 1.0f,  1.0f,  -1.0f, -1.0f, 1.0f,  -1.0f,
-
-      -1.0f, -1.0f, 1.0f,  -1.0f, -1.0f, -1.0f, -1.0f, 1.0f,  -1.0f,
-      -1.0f, 1.0f,  -1.0f, -1.0f, 1.0f,  1.0f,  -1.0f, -1.0f, 1.0f,
-
-      1.0f,  -1.0f, -1.0f, 1.0f,  -1.0f, 1.0f,  1.0f,  1.0f,  1.0f,
-      1.0f,  1.0f,  1.0f,  1.0f,  1.0f,  -1.0f, 1.0f,  -1.0f, -1.0f,
-
-      -1.0f, -1.0f, 1.0f,  -1.0f, 1.0f,  1.0f,  1.0f,  1.0f,  1.0f,
-      1.0f,  1.0f,  1.0f,  1.0f,  -1.0f, 1.0f,  -1.0f, -1.0f, 1.0f,
-
-      -1.0f, 1.0f,  -1.0f, 1.0f,  1.0f,  -1.0f, 1.0f,  1.0f,  1.0f,
-      1.0f,  1.0f,  1.0f,  -1.0f, 1.0f,  1.0f,  -1.0f, 1.0f,  -1.0f,
-
-      -1.0f, -1.0f, -1.0f, -1.0f, -1.0f, 1.0f,  1.0f,  -1.0f, -1.0f,
-      1.0f,  -1.0f, -1.0f, -1.0f, -1.0f, 1.0f,  1.0f,  -1.0f, 1.0f};
-
-  GLuint skyboxShaderProgram = CreateShaderProgram(
-      "C:/Users/Zyxwa/Documents/code/oglc/src/shaders/skybox.vert",
-      "C:/Users/Zyxwa/Documents/code/oglc/src/shaders/skybox.frag");
-
-  GLuint skyboxVao;
-  CALL_GL(glGenVertexArrays(1, &skyboxVao));
-  CALL_GL(glBindVertexArray(skyboxVao));
-
-  GLuint skyboxVbo;
-  CALL_GL(glGenBuffers(1, &skyboxVbo));
-  CALL_GL(glBindBuffer(GL_ARRAY_BUFFER, skyboxVbo));
-  CALL_GL(glBufferData(GL_ARRAY_BUFFER, sizeof(skyboxVertices), skyboxVertices,
-                       GL_STATIC_DRAW));
-  CALL_GL(glEnableVertexAttribArray(0));
-  CALL_GL(glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0));
-
-  CALL_GL(glBindVertexArray(0));
+  struct Skybox* skybox = CreateSkybox();
 
   float selectionVertices[] = {
       -1.0f, -1.0f, -1.0f, -1.0f, -1.0f, 1.0f,  -1.0f, 1.0f,  1.0f,  1.0f,
@@ -203,98 +167,6 @@ int main(void) {
   float breakCooldownS = 0.2f;
   float lastBreakTimeS = 0.f;
 
-  // Held block
-  struct Vertex heldItemVertices[6 * 4] = {0};
-  unsigned int heldItemTriangles[6 * 6] = {0};
-
-  int heldItemcurrentFaceIndex = 0;
-
-  AddFaceToBuffer(BLOCK_GRASS, BLOCK_FACE_TOP, 0, 0, 0,
-                  &heldItemcurrentFaceIndex, heldItemVertices,
-                  heldItemTriangles);
-
-  AddFaceToBuffer(BLOCK_GRASS, BLOCK_FACE_BOTTOM, 0, 0, 0,
-                  &heldItemcurrentFaceIndex, heldItemVertices,
-                  heldItemTriangles);
-
-  AddFaceToBuffer(BLOCK_GRASS, BLOCK_FACE_RIGHT, 0, 0, 0,
-                  &heldItemcurrentFaceIndex, heldItemVertices,
-                  heldItemTriangles);
-
-  AddFaceToBuffer(BLOCK_GRASS, BLOCK_FACE_LEFT, 0, 0, 0,
-                  &heldItemcurrentFaceIndex, heldItemVertices,
-                  heldItemTriangles);
-
-  AddFaceToBuffer(BLOCK_GRASS, BLOCK_FACE_FRONT, 0, 0, 0,
-                  &heldItemcurrentFaceIndex, heldItemVertices,
-                  heldItemTriangles);
-
-  AddFaceToBuffer(BLOCK_GRASS, BLOCK_FACE_BACK, 0, 0, 0,
-                  &heldItemcurrentFaceIndex, heldItemVertices,
-                  heldItemTriangles);
-
-  GLuint heldItemShaderProgram = CreateShaderProgram(
-      "C:/Users/Zyxwa/Documents/code/oglc/src/shaders/heldItem.vert",
-      "C:/Users/Zyxwa/Documents/code/oglc/src/shaders/heldItem.frag");
-
-  GLuint heldItemVao;
-  CALL_GL(glGenVertexArrays(1, &heldItemVao));
-  CALL_GL(glBindVertexArray(heldItemVao));
-
-  GLuint heldItemVbo;
-  CALL_GL(glGenBuffers(1, &(heldItemVbo)));
-  CALL_GL(glBindBuffer(GL_ARRAY_BUFFER, heldItemVbo));
-
-  GLuint heldItemEbo;
-  CALL_GL(glGenBuffers(1, &(heldItemEbo)));
-  CALL_GL(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, heldItemEbo));
-
-  int stride = sizeof(struct Vertex);
-
-  CALL_GL(glEnableVertexAttribArray(0));
-  CALL_GL(glVertexAttribIPointer(0, 1, GL_INT, stride,
-                                 (void*)offsetof(struct Vertex, blockId)));
-
-  CALL_GL(glEnableVertexAttribArray(1));
-  CALL_GL(glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, stride,
-                                (void*)offsetof(struct Vertex, position)));
-
-  CALL_GL(glEnableVertexAttribArray(2));
-  CALL_GL(glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, stride,
-                                (void*)offsetof(struct Vertex, normal)));
-
-  CALL_GL(glEnableVertexAttribArray(3));
-  CALL_GL(glVertexAttribPointer(3, 2, GL_FLOAT, GL_FALSE, stride,
-                                (void*)offsetof(struct Vertex, texCoords)));
-
-  CALL_GL(glBufferData(GL_ARRAY_BUFFER, sizeof(struct Vertex) * 4 * 6,
-                       heldItemVertices, GL_STATIC_DRAW));
-  CALL_GL(glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned int) * 6 * 6,
-                       heldItemTriangles, GL_STATIC_DRAW));
-
-  CALL_GL(glBindVertexArray(0));
-
-  float crosshairScale = 0.02f;
-  float crosshairVertices[] = {
-      -1.f * crosshairScale, -1.f * crosshairScale, 1.f * crosshairScale,
-      -1.f * crosshairScale, 1.f * crosshairScale,  1.f * crosshairScale,
-      1.f * crosshairScale,  1.f * crosshairScale,  -1.f * crosshairScale,
-      1.f * crosshairScale,  -1.f * crosshairScale, -1.f * crosshairScale};
-
-  GLuint crosshairVao;
-  CALL_GL(glGenVertexArrays(1, &crosshairVao));
-  CALL_GL(glBindVertexArray(crosshairVao));
-
-  GLuint crosshairVbo;
-  CALL_GL(glGenBuffers(1, &crosshairVbo));
-  CALL_GL(glBindBuffer(GL_ARRAY_BUFFER, crosshairVbo));
-  CALL_GL(glBufferData(GL_ARRAY_BUFFER, sizeof(crosshairVertices),
-                       crosshairVertices, GL_STATIC_DRAW));
-  CALL_GL(glEnableVertexAttribArray(0));
-  CALL_GL(glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, 0));
-
-  CALL_GL(glBindVertexArray(0));
-
   // Render loop
   while (!glfwWindowShouldClose(window)) {
     float currentTimeS = (float)glfwGetTime();
@@ -329,55 +201,18 @@ int main(void) {
 
     // model matrix is not used since chunks are static
     // use the same mvp for all chunks
-    mat4 mvp;
-    glm_mat4_mulN((mat4*[]){&(camera->projectionMatrix), &(camera->viewMatrix)},
-                  2, mvp);
 
     // mat4 projMatInv;
     // mat4 viewMatInv;
     // glm_mat4_inv(camera->projectionMatrix, projMatInv);
     // glm_mat4_inv(camera->viewMatrix, viewMatInv);
 
-    mat4 viewMatWithoutTranslation = {0};
-    viewMatWithoutTranslation[0][0] = camera->viewMatrix[0][0];
-    viewMatWithoutTranslation[0][1] = camera->viewMatrix[0][1];
-    viewMatWithoutTranslation[0][2] = camera->viewMatrix[0][2];
-
-    viewMatWithoutTranslation[1][0] = camera->viewMatrix[1][0];
-    viewMatWithoutTranslation[1][1] = camera->viewMatrix[1][1];
-    viewMatWithoutTranslation[1][2] = camera->viewMatrix[1][2];
-
-    viewMatWithoutTranslation[2][0] = camera->viewMatrix[2][0];
-    viewMatWithoutTranslation[2][1] = camera->viewMatrix[2][1];
-    viewMatWithoutTranslation[2][2] = camera->viewMatrix[2][2];
-
-    viewMatWithoutTranslation[3][3] = 1;
-
-    mat4 mvpWithoutTranslation;
-    glm_mat4_mulN(
-        (mat4*[]){&(camera->projectionMatrix), &viewMatWithoutTranslation}, 2,
-        mvpWithoutTranslation);
-
-    CALL_GL(glUseProgram(skyboxShaderProgram));
-    CALL_GL(glBindVertexArray(skyboxVao));
-
-    glDepthMask(GL_FALSE);
-
-    // only rotation mvp matrix
-    CALL_GL(GLint testUniform =
-                glGetUniformLocation(skyboxShaderProgram, "u_MVP"));
-    CALL_GL(
-        glUniformMatrix4fv(testUniform, 1, GL_FALSE, mvpWithoutTranslation[0]));
-
-    CALL_GL(glDrawArrays(GL_TRIANGLES, 0, 36));
-
-    glDepthMask(GL_TRUE);
-
-    // unbind
-    CALL_GL(glUseProgram(0));
-    CALL_GL(glBindVertexArray(0));
+    DrawSkybox(skybox, camera->viewMatrix, camera->projectionMatrix);
 
     CALL_GL(glUseProgram(chunkShaderProgram));
+
+    mat4 mvp = {0};
+    glm_mat4_mul(camera->projectionMatrix, camera->viewMatrix, mvp);
 
     // mvp matrix
     CALL_GL(GLint MVPUniform =
@@ -610,43 +445,6 @@ int main(void) {
       CALL_GL(glBindVertexArray(0));
       CALL_GL(glUseProgram(0));
     }
-
-    // Held item
-    CALL_GL(glClear(GL_DEPTH_BUFFER_BIT));
-    CALL_GL(glUseProgram(heldItemShaderProgram));
-    CALL_GL(glBindVertexArray(heldItemVao));
-
-    mat4 heldItemMvp;
-    mat4 heldItemModelMat = GLM_MAT4_IDENTITY_INIT;
-    heldItemModelMat[3][0] = 3.f;
-    heldItemModelMat[3][1] = -2.f;
-    heldItemModelMat[3][2] = -7.f;
-    heldItemModelMat[3][3] = 1;
-    glm_mat4_mulN((mat4*[]){&(camera->projectionMatrix), &heldItemModelMat}, 2,
-                  heldItemMvp);
-
-    // mvp matrix
-    CALL_GL(GLint heldItemMvpUniform =
-                glGetUniformLocation(heldItemShaderProgram, "u_MVP"));
-    CALL_GL(
-        glUniformMatrix4fv(heldItemMvpUniform, 1, GL_FALSE, heldItemMvp[0]));
-
-    CALL_GL(glEnable(GL_BLEND));
-    CALL_GL(glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA));
-
-    CALL_GL(glDrawElements(GL_TRIANGLES, 6 * 6, GL_UNSIGNED_INT, 0));
-
-    CALL_GL(glDisable(GL_BLEND));
-
-    CALL_GL(glBindVertexArray(0));
-    CALL_GL(glUseProgram(0));
-
-    // Crosshair
-    CALL_GL(glClear(GL_DEPTH_BUFFER_BIT));
-    CALL_GL(glBindVertexArray(crosshairVao));
-    CALL_GL(glDrawArrays(GL_TRIANGLES, 0, 6));
-    CALL_GL(glBindVertexArray(0));
-    CALL_GL(glUseProgram(0));
 
     glfwSwapBuffers(window);
 

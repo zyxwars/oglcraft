@@ -24,13 +24,6 @@ struct GenerationNoise {
   fnl_state humidity;
 };
 
-struct Mesh {
-  GLuint vao;
-  GLuint vbo;
-  GLuint ebo;
-  int faceCount;
-};
-
 struct Chunk {
   int x, z;
   unsigned int blocks[CHUNK_VOLUME];
