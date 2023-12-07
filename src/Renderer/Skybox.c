@@ -43,6 +43,7 @@ struct Skybox* CreateSkybox() {
 }
 
 void DrawSkybox(struct Skybox* skybox, mat4 viewMat, mat4 projectionMat) {
+  // The skybox moves with the player
   mat4 viewMatWithoutTranslation = {0};
   viewMatWithoutTranslation[0][0] = viewMat[0][0];
   viewMatWithoutTranslation[0][1] = viewMat[0][1];
@@ -58,17 +59,16 @@ void DrawSkybox(struct Skybox* skybox, mat4 viewMat, mat4 projectionMat) {
 
   viewMatWithoutTranslation[3][3] = 1;
 
-  mat4 mvpWithoutTranslation = {0};
-  glm_mat4_mul(projectionMat, viewMatWithoutTranslation, mvpWithoutTranslation);
+  mat4 mvp = {0};
+  glm_mat4_mul(projectionMat, viewMatWithoutTranslation, mvp);
 
   CALL_GL(glUseProgram(skybox->shader));
   CALL_GL(glBindVertexArray(skybox->mesh.vao));
   CALL_GL(glDepthMask(GL_FALSE));
 
   // only rotation mvp matrix
-  CALL_GL(GLint testUniform = glGetUniformLocation(skybox->shader, "u_MVP"));
-  CALL_GL(
-      glUniformMatrix4fv(testUniform, 1, GL_FALSE, mvpWithoutTranslation[0]));
+  CALL_GL(GLint mvpUniform = glGetUniformLocation(skybox->shader, "u_MVP"));
+  CALL_GL(glUniformMatrix4fv(mvpUniform, 1, GL_FALSE, mvp[0]));
 
   CALL_GL(glDrawArrays(GL_TRIANGLES, 0, 36));
 

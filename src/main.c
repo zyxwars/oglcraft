@@ -199,18 +199,12 @@ int main(void) {
     CALL_GL(glClearColor(1.f, 0.f, 0.f, 1.f));
     CALL_GL(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
 
-    // model matrix is not used since chunks are static
-    // use the same mvp for all chunks
-
-    // mat4 projMatInv;
-    // mat4 viewMatInv;
-    // glm_mat4_inv(camera->projectionMatrix, projMatInv);
-    // glm_mat4_inv(camera->viewMatrix, viewMatInv);
-
     DrawSkybox(skybox, camera->viewMatrix, camera->projectionMatrix);
 
     CALL_GL(glUseProgram(chunkShaderProgram));
 
+    // model matrix is not used since chunks are static
+    // use the same mvp for all chunks
     mat4 mvp = {0};
     glm_mat4_mul(camera->projectionMatrix, camera->viewMatrix, mvp);
 
