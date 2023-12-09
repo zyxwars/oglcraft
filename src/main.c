@@ -137,8 +137,8 @@ int main(void) {
 
   struct Skybox* skybox = CreateSkybox();
 
-  struct HeldItemRenderer heldItemRenderer;
-  HeldItemRendererInit(&heldItemRenderer, player.heldItem);
+  struct HeldItemRenderer* heldItemRenderer =
+      CreateHeldItemRenderer(player.heldItem);
 
   float selectionVertices[] = {
       -1.0f, -1.0f, -1.0f, -1.0f, -1.0f, 1.0f,  -1.0f, 1.0f,  1.0f,  1.0f,
@@ -205,13 +205,13 @@ int main(void) {
       player.heldItem = BLOCK_DIRT;
     }
     if (player.heldItem != lastHeldItem) {
-      HeldItemRendererUpdate(&heldItemRenderer, player.heldItem);
+      HeldItemRendererUpdate(heldItemRenderer, player.heldItem);
     }
 
     double mouseX, mouseY;
     glfwGetCursorPos(window, &mouseX, &mouseY);
 
-    MoveCamera((float)mouseX, (float)mouseY, verticalInput, horizontalInput,
+    CameraMove((float)mouseX, (float)mouseY, verticalInput, horizontalInput,
                deltaTimeS, camera);
 
     // Fog color
@@ -396,7 +396,7 @@ int main(void) {
         // TODO: don't do this raw
         testChunk->blocks[PosInChunkToIndex(
             testInChunkPos[0], testInChunkPos[1], testInChunkPos[2])] =
-            BLOCK_STONE;
+            player.heldItem;
 
         player.lastBreakTimeS = currentTimeS;
         UpdateOpaqueMesh(testChunk);
@@ -441,7 +441,7 @@ int main(void) {
       CALL_GL(glUseProgram(0));
     }
 
-    HeldItemRendererDraw(&heldItemRenderer, camera);
+    HeldItemRendererDraw(heldItemRenderer, camera);
 
     glfwSwapBuffers(window);
 

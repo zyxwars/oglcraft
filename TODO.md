@@ -2,7 +2,6 @@
 - separate rendering from generation logic
 
 - crosshair
-- selected block
 
 - improve terrain gen
 - order water

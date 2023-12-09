@@ -15,8 +15,7 @@ struct HeldItemRenderer {
   GLuint shader;
 };
 
-void HeldItemRendererInit(struct HeldItemRenderer* const rend,
-                          enum BlockId heldBlock);
+struct HeldItemRenderer* CreateHeldItemRenderer(enum BlockId heldBlock);
 
 void HeldItemRendererUpdate(struct HeldItemRenderer* const rend,
                             enum BlockId heldBlock);

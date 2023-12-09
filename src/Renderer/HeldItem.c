@@ -1,7 +1,8 @@
 #include "HeldItem.h"
 
-void HeldItemRendererInit(struct HeldItemRenderer* const rend,
-                          enum BlockId heldBlock) {
+struct HeldItemRenderer* CreateHeldItemRenderer(enum BlockId heldBlock) {
+  struct HeldItemRenderer* rend = calloc(1, sizeof(struct HeldItemRenderer));
+
   rend->shader = CreateShaderProgram(
       "C:/Users/Zyxwa/Documents/code/oglc/src/shaders/heldItem.vert",
       "C:/Users/Zyxwa/Documents/code/oglc/src/shaders/heldItem.frag");
@@ -61,6 +62,8 @@ void HeldItemRendererInit(struct HeldItemRenderer* const rend,
   CALL_GL(glBindVertexArray(0));
 
   rend->mesh.faceCount = 6;
+
+  return rend;
 }
 
 // TODO: do more efficiently
@@ -118,4 +121,4 @@ void HeldItemRendererDraw(struct HeldItemRenderer* const rend,
 }
 
 // TODO:
-void HeldItemRendererDestroy(struct HeldItemRenderer* const rend) {}
+void HeldItemRendererDestroy(struct HeldItemRenderer* rend) {}

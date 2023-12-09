@@ -56,7 +56,7 @@ struct Camera* CreateCamera() {
   return camera;
 };
 
-void MoveCamera(float mouseX, float mouseY, int verticalInput,
+void CameraMove(float mouseX, float mouseY, int verticalInput,
                 int horizontalInput, float deltaTimeS, struct Camera* camera) {
   // camera rotation
   if (camera->mouseHasMoved) {

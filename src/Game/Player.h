@@ -3,7 +3,7 @@
 #include "../Terrain/Block.h"
 
 #define PLAYER_INIT \
-  {.heldItem = BLOCK_GRASS, .breakCooldownS = 0.2f, .lastBreakTimeS = 0.f};
+  {.heldItem = BLOCK_STONE, .breakCooldownS = 0.15f, .lastBreakTimeS = 0.f};
 
 struct Player {
   enum BlockId heldItem;

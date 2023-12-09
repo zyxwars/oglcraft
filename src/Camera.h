@@ -19,12 +19,6 @@ struct Transform {
   vec3 up;
 };
 
-void UpdateVectors(struct Transform* transform);
-
-void SetTranslation(float x, float y, float z, struct Transform* transform);
-
-void SetRotation(float x, float y, float z, struct Transform* transform);
-
 struct Camera {
   mat4 projectionMatrix;
   mat4 viewMatrix;
@@ -44,5 +38,5 @@ struct Camera {
 
 struct Camera* CreateCamera();
 
-void MoveCamera(float mouseX, float mouseY, int verticalInput,
+void CameraMove(float mouseX, float mouseY, int verticalInput,
                 int horizontalInput, float deltaTimeS, struct Camera* camera);
