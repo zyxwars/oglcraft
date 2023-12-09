@@ -21,6 +21,7 @@
 #include "Renderer/Skybox.h"
 #include "Terrain/Chunk.h"
 #include "Renderer/HeldItem.h"
+#include "Game/Player.h"
 // #include "Text.h"
 
 // #define _CRTDBG_MAP_ALLOC
@@ -36,6 +37,8 @@ void GLAPIENTRY MessageCallback(GLenum source, GLenum type, GLuint id,
 }
 
 int main(void) {
+  struct Player player = PLAYER_INIT;
+
   // Init glfw
   GLFWwindow* window;
 
@@ -134,10 +137,8 @@ int main(void) {
 
   struct Skybox* skybox = CreateSkybox();
 
-  GLuint testShader = CreateShaderProgram(
-      "C:/Users/Zyxwa/Documents/code/oglc/src/shaders/heldItem.vert",
-      "C:/Users/Zyxwa/Documents/code/oglc/src/shaders/heldItem.frag");
-  struct Mesh* heldItem = CreateHeldItem();
+  struct HeldItemRenderer heldItemRenderer;
+  HeldItemRendererInit(&heldItemRenderer, player.heldItem);
 
   float selectionVertices[] = {
       -1.0f, -1.0f, -1.0f, -1.0f, -1.0f, 1.0f,  -1.0f, 1.0f,  1.0f,  1.0f,
@@ -170,9 +171,6 @@ int main(void) {
 
   CALL_GL(glBindVertexArray(0));
 
-  float breakCooldownS = 0.2f;
-  float lastBreakTimeS = 0.f;
-
   // Render loop
   while (!glfwWindowShouldClose(window)) {
     float currentTimeS = (float)glfwGetTime();
@@ -193,6 +191,21 @@ int main(void) {
     }
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
       horizontalInput -= 1;
+    }
+
+    // TODO: just for testing
+    enum BlockId lastHeldItem = player.heldItem;
+    if (glfwGetKey(window, GLFW_KEY_1) == GLFW_PRESS) {
+      player.heldItem = BLOCK_STONE;
+    } else if (glfwGetKey(window, GLFW_KEY_2) == GLFW_PRESS) {
+      player.heldItem = BLOCK_GRASS;
+    } else if (glfwGetKey(window, GLFW_KEY_3) == GLFW_PRESS) {
+      player.heldItem = BLOCK_OAK_LOG;
+    } else if (glfwGetKey(window, GLFW_KEY_4) == GLFW_PRESS) {
+      player.heldItem = BLOCK_DIRT;
+    }
+    if (player.heldItem != lastHeldItem) {
+      HeldItemRendererUpdate(&heldItemRenderer, player.heldItem);
     }
 
     double mouseX, mouseY;
@@ -335,21 +348,21 @@ int main(void) {
              selectionInChunkPos[2]);
 
       if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_1) == GLFW_PRESS) {
-        if (currentTimeS - lastBreakTimeS < breakCooldownS) break;
+        if (currentTimeS - player.lastBreakTimeS < player.breakCooldownS) break;
 
         // TODO: don't do this raw
         hitChunk->blocks[PosInChunkToIndex(selectionInChunkPos[0],
                                            selectionInChunkPos[1],
                                            selectionInChunkPos[2])] = 0;
 
-        lastBreakTimeS = currentTimeS;
+        player.lastBreakTimeS = currentTimeS;
         UpdateOpaqueMesh(hitChunk);
 
         break;
       }
 
       if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_2) == GLFW_PRESS) {
-        if (currentTimeS - lastBreakTimeS < breakCooldownS) break;
+        if (currentTimeS - player.lastBreakTimeS < player.breakCooldownS) break;
 
         ivec2 testChunkPos = {
             (int)floor((float)lastStepPos[0] / (CHUNK_LENGTH)),
@@ -385,7 +398,7 @@ int main(void) {
             testInChunkPos[0], testInChunkPos[1], testInChunkPos[2])] =
             BLOCK_STONE;
 
-        lastBreakTimeS = currentTimeS;
+        player.lastBreakTimeS = currentTimeS;
         UpdateOpaqueMesh(testChunk);
 
         break;
@@ -428,23 +441,7 @@ int main(void) {
       CALL_GL(glUseProgram(0));
     }
 
-    // TODO: wrap everything in a function
-    mat4 heldItemMVP = GLM_MAT4_IDENTITY_INIT;
-    vec3 heldItemTranslation = {2, -1, -3.5};
-    glm_translate(heldItemMVP, heldItemTranslation);
-    glm_mat4_mul(camera->projectionMatrix, heldItemMVP, heldItemMVP);
-
-    CALL_GL(glBindVertexArray(heldItem->vao));
-    CALL_GL(glUseProgram(testShader));
-    CALL_GL(glClear(GL_DEPTH_BUFFER_BIT));
-    CALL_GL(GLint heldItemMVPUniform =
-                glGetUniformLocation(testShader, "u_MVP"));
-    CALL_GL(
-        glUniformMatrix4fv(heldItemMVPUniform, 1, GL_FALSE, heldItemMVP[0]));
-    CALL_GL(glDrawElements(GL_TRIANGLES, heldItem->faceCount * 6,
-                           GL_UNSIGNED_INT, 0));
-    CALL_GL(glBindVertexArray(0))
-    CALL_GL(glUseProgram(0));
+    HeldItemRendererDraw(&heldItemRenderer, camera);
 
     glfwSwapBuffers(window);
 
