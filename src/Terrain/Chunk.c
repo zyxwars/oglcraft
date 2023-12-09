@@ -172,9 +172,7 @@ void CreateTranslucentMesh(struct Chunk* chunk) {
 
 void UpdateOpaqueMesh(struct Chunk* chunk) {
   CALL_GL(glBindVertexArray(chunk->opaqueMesh.vao));
-
   CALL_GL(glBindBuffer(GL_ARRAY_BUFFER, chunk->opaqueMesh.vbo));
-
   CALL_GL(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, chunk->opaqueMesh.ebo));
 
   // TODO: allocate in a less wasteful way?

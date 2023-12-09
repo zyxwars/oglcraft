@@ -16,7 +16,7 @@ struct HeldItemRenderer {
 };
 
 void HeldItemRendererInit(struct HeldItemRenderer* const rend,
-                          enumb BlockId heldBlock);
+                          enum BlockId heldBlock);
 
 void HeldItemRendererUpdate(struct HeldItemRenderer* const rend,
                             enum BlockId heldBlock);
