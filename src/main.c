@@ -19,6 +19,7 @@
 #include "Renderer/GlWrapper.h"
 #include "Renderer/Shader.h"
 #include "Renderer/Skybox.h"
+#include "Renderer/Selection.h"
 #include "Terrain/Chunk.h"
 #include "Renderer/HeldItem.h"
 #include "Game/Player.h"
@@ -140,36 +141,7 @@ int main(void) {
   struct HeldItemRenderer* heldItemRenderer =
       CreateHeldItemRenderer(player.heldItem);
 
-  float selectionVertices[] = {
-      -1.0f, -1.0f, -1.0f, -1.0f, -1.0f, 1.0f,  -1.0f, 1.0f,  1.0f,  1.0f,
-      1.0f,  -1.0f, -1.0f, -1.0f, -1.0f, -1.0f, 1.0f,  -1.0f, 1.0f,  -1.0f,
-      1.0f,  -1.0f, -1.0f, -1.0f, 1.0f,  -1.0f, -1.0f, 1.0f,  1.0f,  -1.0f,
-      1.0f,  -1.0f, -1.0f, -1.0f, -1.0f, -1.0f, -1.0f, -1.0f, -1.0f, -1.0f,
-      1.0f,  1.0f,  -1.0f, 1.0f,  -1.0f, 1.0f,  -1.0f, 1.0f,  -1.0f, -1.0f,
-      1.0f,  -1.0f, -1.0f, -1.0f, -1.0f, 1.0f,  1.0f,  -1.0f, -1.0f, 1.0f,
-      1.0f,  -1.0f, 1.0f,  1.0f,  1.0f,  1.0f,  1.0f,  -1.0f, -1.0f, 1.0f,
-      1.0f,  -1.0f, 1.0f,  -1.0f, -1.0f, 1.0f,  1.0f,  1.0f,  1.0f,  -1.0f,
-      1.0f,  1.0f,  1.0f,  1.0f,  1.0f,  1.0f,  -1.0f, -1.0f, 1.0f,  -1.0f,
-      1.0f,  1.0f,  1.0f,  -1.0f, 1.0f,  -1.0f, -1.0f, 1.0f,  1.0f,  1.0f,
-      1.0f,  1.0f,  -1.0f, 1.0f,  1.0f,  1.0f,  -1.0f, 1.0f};
-
-  GLuint selectionShaderProgram = CreateShaderProgram(
-      "C:/Users/Zyxwa/Documents/code/oglc/src/shaders/selection.vert",
-      "C:/Users/Zyxwa/Documents/code/oglc/src/shaders/selection.frag");
-
-  GLuint selectionVao;
-  CALL_GL(glGenVertexArrays(1, &selectionVao));
-  CALL_GL(glBindVertexArray(selectionVao));
-
-  GLuint selectionVbo;
-  CALL_GL(glGenBuffers(1, &selectionVbo));
-  CALL_GL(glBindBuffer(GL_ARRAY_BUFFER, selectionVbo));
-  CALL_GL(glBufferData(GL_ARRAY_BUFFER, sizeof(selectionVertices),
-                       selectionVertices, GL_STATIC_DRAW));
-  CALL_GL(glEnableVertexAttribArray(0));
-  CALL_GL(glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0));
-
-  CALL_GL(glBindVertexArray(0));
+  struct SelectionRenderer* selectionRenderer = CreateSelectionRenderer();
 
   // Render loop
   while (!glfwWindowShouldClose(window)) {
@@ -408,37 +380,7 @@ int main(void) {
     }
 
     if (isHit) {
-      CALL_GL(glUseProgram(selectionShaderProgram));
-      CALL_GL(glBindVertexArray(selectionVao));
-
-      mat4 selectionMvp;
-      mat4 selectionModelMat = GLM_MAT4_IDENTITY_INIT;
-      glm_mat4_scale(selectionModelMat, 0.51f);
-      selectionModelMat[3][0] = (float)selectionPos[0];
-      selectionModelMat[3][1] = (float)selectionPos[1];
-      selectionModelMat[3][2] = (float)selectionPos[2];
-      selectionModelMat[3][3] = 1;
-
-      // TODO: this doesn't work in a function?, use mul instead of mulN
-      glm_mat4_mulN((mat4*[]){&(camera->projectionMatrix),
-                              &(camera->viewMatrix), &selectionModelMat},
-                    3, selectionMvp);
-
-      // mvp matrix
-      CALL_GL(GLint selectionMvpUniform =
-                  glGetUniformLocation(selectionShaderProgram, "u_MVP"));
-      CALL_GL(glUniformMatrix4fv(selectionMvpUniform, 1, GL_FALSE,
-                                 selectionMvp[0]));
-
-      CALL_GL(glEnable(GL_BLEND));
-      CALL_GL(glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA));
-
-      CALL_GL(glDrawArrays(GL_TRIANGLES, 0, 36));
-
-      CALL_GL(glDisable(GL_BLEND));
-
-      CALL_GL(glBindVertexArray(0));
-      CALL_GL(glUseProgram(0));
+      SelectionRendererDraw(selectionRenderer, selectionPos, camera);
     }
 
     HeldItemRendererDraw(heldItemRenderer, camera);
