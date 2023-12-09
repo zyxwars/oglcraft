@@ -12,13 +12,13 @@ const struct Block BlockTypes[] = {
     // TODO: air defined as a cutout to make things easier
     {{0}, 0, 0, 1, 0},
     // grass
-    {{{3, 0}, {3, 0}, {0, 0}, {3, 0}, {3, 0}, {3, 0}}, 1, 0, 0, 1},
+    {{{3, 0}, {3, 0}, {0, 0}, {2, 0}, {3, 0}, {3, 0}}, 1, 0, 0, 1},
     // water
     {{{13, 12}, {13, 12}, {13, 12}, {13, 12}, {13, 12}, {13, 12}}, 0, 1, 0, 1},
     // dirt
     {{{2, 0}, {2, 0}, {2, 0}, {2, 0}, {2, 0}, {2, 0}}, 1, 0, 0, 1},
     // oak log
-    {{{4, 1}, {4, 1}, {5, 1}, {4, 1}, {4, 1}, {4, 1}}, 1, 0, 0, 1},
+    {{{4, 1}, {4, 1}, {5, 1}, {5, 1}, {4, 1}, {4, 1}}, 1, 0, 0, 1},
     // leaves
     {{{4, 3}, {4, 3}, {4, 3}, {4, 3}, {4, 3}, {4, 3}}, 1, 0, 1, 0},
     // stone
@@ -222,7 +222,7 @@ void AddFaceToBuffer(unsigned int blockId, enum BlockFace blockFace, int worldX,
 void AddToOpaqueBuffer(unsigned int* chunkData, int x, int y, int z, int worldX,
                        int worldZ, int* currentFaceIndex,
                        struct Vertex* vertices, unsigned int* triangles) {
-  int blockId = chunkData[PosToIndex(x, y, z)];
+  int blockId = chunkData[PosInChunkToIndex(x, y, z)];
 
   // Only process opaque blocks
   if (!(BlockTypes[blockId].isOpaque)) {
@@ -231,22 +231,25 @@ void AddToOpaqueBuffer(unsigned int* chunkData, int x, int y, int z, int worldX,
 
   // Neighbors
   const struct Block* frontN =
-      z + 1 == CHUNK_LENGTH ? NULL
-                            : &BlockTypes[chunkData[PosToIndex(x, y, z + 1)]];
+      z + 1 == CHUNK_LENGTH
+          ? NULL
+          : &BlockTypes[chunkData[PosInChunkToIndex(x, y, z + 1)]];
   const struct Block* backN =
-      z == 0 ? NULL : &BlockTypes[chunkData[PosToIndex(x, y, z - 1)]];
+      z == 0 ? NULL : &BlockTypes[chunkData[PosInChunkToIndex(x, y, z - 1)]];
 
   const struct Block* topN =
-      y + 1 == CHUNK_HEIGHT ? NULL
-                            : &BlockTypes[chunkData[PosToIndex(x, y + 1, z)]];
+      y + 1 == CHUNK_HEIGHT
+          ? NULL
+          : &BlockTypes[chunkData[PosInChunkToIndex(x, y + 1, z)]];
   const struct Block* bottomN =
-      y == 0 ? NULL : &BlockTypes[chunkData[PosToIndex(x, y - 1, z)]];
+      y == 0 ? NULL : &BlockTypes[chunkData[PosInChunkToIndex(x, y - 1, z)]];
 
   const struct Block* rightN =
-      x + 1 == CHUNK_LENGTH ? NULL
-                            : &BlockTypes[chunkData[PosToIndex(x + 1, y, z)]];
+      x + 1 == CHUNK_LENGTH
+          ? NULL
+          : &BlockTypes[chunkData[PosInChunkToIndex(x + 1, y, z)]];
   const struct Block* leftN =
-      x == 0 ? NULL : &BlockTypes[chunkData[PosToIndex(x - 1, y, z)]];
+      x == 0 ? NULL : &BlockTypes[chunkData[PosInChunkToIndex(x - 1, y, z)]];
 
   // If neighbor is out of range render without checking other conditions
   // TODO: implement self culling for glass
@@ -278,7 +281,7 @@ void AddToOpaqueBuffer(unsigned int* chunkData, int x, int y, int z, int worldX,
 void AddToTranslucentBuffer(unsigned int* chunkData, int x, int y, int z,
                             int worldX, int worldZ, int* currentFaceIndex,
                             struct Vertex* vertices, unsigned int* triangles) {
-  int blockId = chunkData[PosToIndex(x, y, z)];
+  int blockId = chunkData[PosInChunkToIndex(x, y, z)];
 
   // Only process translucent blocks
   if (!(BlockTypes[blockId].isTranslucent)) {
@@ -287,22 +290,25 @@ void AddToTranslucentBuffer(unsigned int* chunkData, int x, int y, int z,
 
   // Neighbors
   const struct Block* frontN =
-      z + 1 == CHUNK_LENGTH ? NULL
-                            : &BlockTypes[chunkData[PosToIndex(x, y, z + 1)]];
+      z + 1 == CHUNK_LENGTH
+          ? NULL
+          : &BlockTypes[chunkData[PosInChunkToIndex(x, y, z + 1)]];
   const struct Block* backN =
-      z == 0 ? NULL : &BlockTypes[chunkData[PosToIndex(x, y, z - 1)]];
+      z == 0 ? NULL : &BlockTypes[chunkData[PosInChunkToIndex(x, y, z - 1)]];
 
   const struct Block* topN =
-      y + 1 == CHUNK_HEIGHT ? NULL
-                            : &BlockTypes[chunkData[PosToIndex(x, y + 1, z)]];
+      y + 1 == CHUNK_HEIGHT
+          ? NULL
+          : &BlockTypes[chunkData[PosInChunkToIndex(x, y + 1, z)]];
   const struct Block* bottomN =
-      y == 0 ? NULL : &BlockTypes[chunkData[PosToIndex(x, y - 1, z)]];
+      y == 0 ? NULL : &BlockTypes[chunkData[PosInChunkToIndex(x, y - 1, z)]];
 
   const struct Block* rightN =
-      x + 1 == CHUNK_LENGTH ? NULL
-                            : &BlockTypes[chunkData[PosToIndex(x + 1, y, z)]];
+      x + 1 == CHUNK_LENGTH
+          ? NULL
+          : &BlockTypes[chunkData[PosInChunkToIndex(x + 1, y, z)]];
   const struct Block* leftN =
-      x == 0 ? NULL : &BlockTypes[chunkData[PosToIndex(x - 1, y, z)]];
+      x == 0 ? NULL : &BlockTypes[chunkData[PosInChunkToIndex(x - 1, y, z)]];
 
   // Add only faces touching cutouts
   // Air is a cutout for now as well

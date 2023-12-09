@@ -1,7 +1,39 @@
 #include "Chunk.h"
 
-int PosToIndex(int x, int y, int z) {
+int PosInChunkToIndex(int x, int y, int z) {
   return x + z * CHUNK_LENGTH + y * CHUNK_PLANE_AREA;
+}
+
+void PosToChunkPos(ivec3 pos, ivec2* chunkPos) {
+  (*chunkPos)[0] = (int)floor((float)pos[0] / (CHUNK_LENGTH));
+  (*chunkPos)[1] = (int)floor((float)pos[2] / (CHUNK_LENGTH));
+}
+
+void PosToPosInChunk(ivec3 pos, ivec3* posInChunk) {
+  ivec2 chunkPos = {0};
+  PosToChunkPos(pos, *chunkPos);
+
+  // y isn't chunked
+  (*posInChunk)[1] = pos[1];
+
+  if (pos[0] < 0) {
+    (*posInChunk)[0] = abs(pos[0] % CHUNK_LENGTH);
+    if ((*posInChunk)[0] != 0) {
+      (*posInChunk)[0] = CHUNK_LENGTH - (*posInChunk)[0];
+    }
+
+  } else {
+    (*posInChunk)[0] = (pos[0]) % CHUNK_LENGTH;
+  }
+
+  if (pos[2] < 0) {
+    (*posInChunk)[2] = abs(pos[2] % CHUNK_LENGTH);
+    if ((*posInChunk)[2] != 0) {
+      (*posInChunk)[2] = CHUNK_LENGTH - (*posInChunk)[2];
+    }
+  } else {
+    (*posInChunk)[2] = (pos[2]) % CHUNK_LENGTH;
+  }
 }
 
 // TODO: create update function
@@ -257,11 +289,11 @@ struct Chunk* CreateChunk(struct GenerationNoise* noise, int chunkX,
           break;
       }
 
-      chunk->blocks[PosToIndex(x, worldY, z)] = surfaceBlock;
+      chunk->blocks[PosInChunkToIndex(x, worldY, z)] = surfaceBlock;
 
       // Fill every block under height to a solid
       for (int y = 0; y < worldY; y++) {
-        chunk->blocks[PosToIndex(x, y, z)] = surfaceBlock;
+        chunk->blocks[PosInChunkToIndex(x, y, z)] = surfaceBlock;
       }
     }
   }
@@ -272,8 +304,8 @@ struct Chunk* CreateChunk(struct GenerationNoise* noise, int chunkX,
     for (int x = 0; x < CHUNK_LENGTH; x++) {
       for (int z = 0; z < CHUNK_LENGTH; z++) {
         // Fill air blocks with water
-        if (chunk->blocks[PosToIndex(x, y, z)] == BLOCK_AIR) {
-          chunk->blocks[PosToIndex(x, y, z)] = BLOCK_WATER;
+        if (chunk->blocks[PosInChunkToIndex(x, y, z)] == BLOCK_AIR) {
+          chunk->blocks[PosInChunkToIndex(x, y, z)] = BLOCK_WATER;
         }
       }
     }
@@ -283,9 +315,9 @@ struct Chunk* CreateChunk(struct GenerationNoise* noise, int chunkX,
   for (int y = 0; y < waterHeight - 1; y++) {
     for (int x = 0; x < CHUNK_LENGTH; x++) {
       for (int z = 0; z < CHUNK_LENGTH; z++) {
-        if (chunk->blocks[PosToIndex(x, y + 1, z)] == BLOCK_WATER &&
-            chunk->blocks[PosToIndex(x, y, z)] != BLOCK_WATER) {
-          chunk->blocks[PosToIndex(x, y, z)] = BLOCK_GRAVEL;
+        if (chunk->blocks[PosInChunkToIndex(x, y + 1, z)] == BLOCK_WATER &&
+            chunk->blocks[PosInChunkToIndex(x, y, z)] != BLOCK_WATER) {
+          chunk->blocks[PosInChunkToIndex(x, y, z)] = BLOCK_GRAVEL;
         }
       }
     }
@@ -297,91 +329,137 @@ struct Chunk* CreateChunk(struct GenerationNoise* noise, int chunkX,
 
   for (int y = 0; y < CHUNK_HEIGHT - 8; y++) {
     // Block is air
-    if (chunk->blocks[PosToIndex(treeX, y, treeZ)] != BLOCK_AIR) continue;
+    if (chunk->blocks[PosInChunkToIndex(treeX, y, treeZ)] != BLOCK_AIR)
+      continue;
 
     // Spawn trunk only on grass
-    if (chunk->blocks[PosToIndex(treeX, y - 1, treeZ)] != BLOCK_GRASS) continue;
+    if (chunk->blocks[PosInChunkToIndex(treeX, y - 1, treeZ)] != BLOCK_GRASS)
+      continue;
 
     // Turn grass to dirt
-    chunk->blocks[PosToIndex(treeX, y - 1, treeZ)] = BLOCK_DIRT;
+    chunk->blocks[PosInChunkToIndex(treeX, y - 1, treeZ)] = BLOCK_DIRT;
 
     // Trunk
-    chunk->blocks[PosToIndex(treeX, y, treeZ)] = BLOCK_OAK_LOG;
-    chunk->blocks[PosToIndex(treeX, y + 1, treeZ)] = BLOCK_OAK_LOG;
-    chunk->blocks[PosToIndex(treeX, y + 2, treeZ)] = BLOCK_OAK_LOG;
-    chunk->blocks[PosToIndex(treeX, y + 3, treeZ)] = BLOCK_OAK_LOG;
-    chunk->blocks[PosToIndex(treeX, y + 4, treeZ)] = BLOCK_OAK_LOG;
-    chunk->blocks[PosToIndex(treeX, y + 5, treeZ)] = BLOCK_OAK_LOG;
+    chunk->blocks[PosInChunkToIndex(treeX, y, treeZ)] = BLOCK_OAK_LOG;
+    chunk->blocks[PosInChunkToIndex(treeX, y + 1, treeZ)] = BLOCK_OAK_LOG;
+    chunk->blocks[PosInChunkToIndex(treeX, y + 2, treeZ)] = BLOCK_OAK_LOG;
+    chunk->blocks[PosInChunkToIndex(treeX, y + 3, treeZ)] = BLOCK_OAK_LOG;
+    chunk->blocks[PosInChunkToIndex(treeX, y + 4, treeZ)] = BLOCK_OAK_LOG;
+    chunk->blocks[PosInChunkToIndex(treeX, y + 5, treeZ)] = BLOCK_OAK_LOG;
 
     // Leaves
     // From top layer
-    chunk->blocks[PosToIndex(treeX, y + 6, treeZ)] = BLOCK_LEAVES;
-    chunk->blocks[PosToIndex(treeX + 1, y + 6, treeZ)] = BLOCK_LEAVES;
-    chunk->blocks[PosToIndex(treeX - 1, y + 6, treeZ)] = BLOCK_LEAVES;
-    chunk->blocks[PosToIndex(treeX, y + 6, treeZ - 1)] = BLOCK_LEAVES;
-    chunk->blocks[PosToIndex(treeX, y + 6, treeZ + 1)] = BLOCK_LEAVES;
+    chunk->blocks[PosInChunkToIndex(treeX, y + 6, treeZ)] = BLOCK_LEAVES;
+    chunk->blocks[PosInChunkToIndex(treeX + 1, y + 6, treeZ)] = BLOCK_LEAVES;
+    chunk->blocks[PosInChunkToIndex(treeX - 1, y + 6, treeZ)] = BLOCK_LEAVES;
+    chunk->blocks[PosInChunkToIndex(treeX, y + 6, treeZ - 1)] = BLOCK_LEAVES;
+    chunk->blocks[PosInChunkToIndex(treeX, y + 6, treeZ + 1)] = BLOCK_LEAVES;
 
     //
-    chunk->blocks[PosToIndex(treeX + 1, y + 5, treeZ)] = BLOCK_LEAVES;
-    chunk->blocks[PosToIndex(treeX - 1, y + 5, treeZ)] = BLOCK_LEAVES;
-    chunk->blocks[PosToIndex(treeX, y + 5, treeZ - 1)] = BLOCK_LEAVES;
-    chunk->blocks[PosToIndex(treeX, y + 5, treeZ + 1)] = BLOCK_LEAVES;
+    chunk->blocks[PosInChunkToIndex(treeX + 1, y + 5, treeZ)] = BLOCK_LEAVES;
+    chunk->blocks[PosInChunkToIndex(treeX - 1, y + 5, treeZ)] = BLOCK_LEAVES;
+    chunk->blocks[PosInChunkToIndex(treeX, y + 5, treeZ - 1)] = BLOCK_LEAVES;
+    chunk->blocks[PosInChunkToIndex(treeX, y + 5, treeZ + 1)] = BLOCK_LEAVES;
 
     //
-    chunk->blocks[PosToIndex(treeX + 1, y + 4, treeZ + 2)] = BLOCK_LEAVES;
-    chunk->blocks[PosToIndex(treeX + 0, y + 4, treeZ + 2)] = BLOCK_LEAVES;
-    chunk->blocks[PosToIndex(treeX + -1, y + 4, treeZ + 2)] = BLOCK_LEAVES;
+    chunk->blocks[PosInChunkToIndex(treeX + 1, y + 4, treeZ + 2)] =
+        BLOCK_LEAVES;
+    chunk->blocks[PosInChunkToIndex(treeX + 0, y + 4, treeZ + 2)] =
+        BLOCK_LEAVES;
+    chunk->blocks[PosInChunkToIndex(treeX + -1, y + 4, treeZ + 2)] =
+        BLOCK_LEAVES;
 
-    chunk->blocks[PosToIndex(treeX + 2, y + 4, treeZ + 1)] = BLOCK_LEAVES;
-    chunk->blocks[PosToIndex(treeX + 1, y + 4, treeZ + 1)] = BLOCK_LEAVES;
-    chunk->blocks[PosToIndex(treeX + 0, y + 4, treeZ + 1)] = BLOCK_LEAVES;
-    chunk->blocks[PosToIndex(treeX + -1, y + 4, treeZ + 1)] = BLOCK_LEAVES;
-    chunk->blocks[PosToIndex(treeX + -2, y + 4, treeZ + 1)] = BLOCK_LEAVES;
+    chunk->blocks[PosInChunkToIndex(treeX + 2, y + 4, treeZ + 1)] =
+        BLOCK_LEAVES;
+    chunk->blocks[PosInChunkToIndex(treeX + 1, y + 4, treeZ + 1)] =
+        BLOCK_LEAVES;
+    chunk->blocks[PosInChunkToIndex(treeX + 0, y + 4, treeZ + 1)] =
+        BLOCK_LEAVES;
+    chunk->blocks[PosInChunkToIndex(treeX + -1, y + 4, treeZ + 1)] =
+        BLOCK_LEAVES;
+    chunk->blocks[PosInChunkToIndex(treeX + -2, y + 4, treeZ + 1)] =
+        BLOCK_LEAVES;
 
-    chunk->blocks[PosToIndex(treeX + 2, y + 4, treeZ + 0)] = BLOCK_LEAVES;
-    chunk->blocks[PosToIndex(treeX + 1, y + 4, treeZ + 0)] = BLOCK_LEAVES;
-    chunk->blocks[PosToIndex(treeX + -1, y + 4, treeZ + 0)] = BLOCK_LEAVES;
-    chunk->blocks[PosToIndex(treeX + -2, y + 4, treeZ + 0)] = BLOCK_LEAVES;
+    chunk->blocks[PosInChunkToIndex(treeX + 2, y + 4, treeZ + 0)] =
+        BLOCK_LEAVES;
+    chunk->blocks[PosInChunkToIndex(treeX + 1, y + 4, treeZ + 0)] =
+        BLOCK_LEAVES;
+    chunk->blocks[PosInChunkToIndex(treeX + -1, y + 4, treeZ + 0)] =
+        BLOCK_LEAVES;
+    chunk->blocks[PosInChunkToIndex(treeX + -2, y + 4, treeZ + 0)] =
+        BLOCK_LEAVES;
 
-    chunk->blocks[PosToIndex(treeX + 2, y + 4, treeZ - 1)] = BLOCK_LEAVES;
-    chunk->blocks[PosToIndex(treeX + 1, y + 4, treeZ - 1)] = BLOCK_LEAVES;
-    chunk->blocks[PosToIndex(treeX + 0, y + 4, treeZ - 1)] = BLOCK_LEAVES;
-    chunk->blocks[PosToIndex(treeX + -1, y + 4, treeZ - 1)] = BLOCK_LEAVES;
-    chunk->blocks[PosToIndex(treeX + -2, y + 4, treeZ - 1)] = BLOCK_LEAVES;
+    chunk->blocks[PosInChunkToIndex(treeX + 2, y + 4, treeZ - 1)] =
+        BLOCK_LEAVES;
+    chunk->blocks[PosInChunkToIndex(treeX + 1, y + 4, treeZ - 1)] =
+        BLOCK_LEAVES;
+    chunk->blocks[PosInChunkToIndex(treeX + 0, y + 4, treeZ - 1)] =
+        BLOCK_LEAVES;
+    chunk->blocks[PosInChunkToIndex(treeX + -1, y + 4, treeZ - 1)] =
+        BLOCK_LEAVES;
+    chunk->blocks[PosInChunkToIndex(treeX + -2, y + 4, treeZ - 1)] =
+        BLOCK_LEAVES;
 
-    chunk->blocks[PosToIndex(treeX + 1, y + 4, treeZ - 2)] = BLOCK_LEAVES;
-    chunk->blocks[PosToIndex(treeX + 0, y + 4, treeZ - 2)] = BLOCK_LEAVES;
-    chunk->blocks[PosToIndex(treeX + -1, y + 4, treeZ - 2)] = BLOCK_LEAVES;
+    chunk->blocks[PosInChunkToIndex(treeX + 1, y + 4, treeZ - 2)] =
+        BLOCK_LEAVES;
+    chunk->blocks[PosInChunkToIndex(treeX + 0, y + 4, treeZ - 2)] =
+        BLOCK_LEAVES;
+    chunk->blocks[PosInChunkToIndex(treeX + -1, y + 4, treeZ - 2)] =
+        BLOCK_LEAVES;
 
     //
-    chunk->blocks[PosToIndex(treeX + 2, y + 3, treeZ + 2)] = BLOCK_LEAVES;
-    chunk->blocks[PosToIndex(treeX + 1, y + 3, treeZ + 2)] = BLOCK_LEAVES;
-    chunk->blocks[PosToIndex(treeX + 0, y + 3, treeZ + 2)] = BLOCK_LEAVES;
-    chunk->blocks[PosToIndex(treeX + -1, y + 3, treeZ + 2)] = BLOCK_LEAVES;
-    chunk->blocks[PosToIndex(treeX + -2, y + 3, treeZ + 2)] = BLOCK_LEAVES;
+    chunk->blocks[PosInChunkToIndex(treeX + 2, y + 3, treeZ + 2)] =
+        BLOCK_LEAVES;
+    chunk->blocks[PosInChunkToIndex(treeX + 1, y + 3, treeZ + 2)] =
+        BLOCK_LEAVES;
+    chunk->blocks[PosInChunkToIndex(treeX + 0, y + 3, treeZ + 2)] =
+        BLOCK_LEAVES;
+    chunk->blocks[PosInChunkToIndex(treeX + -1, y + 3, treeZ + 2)] =
+        BLOCK_LEAVES;
+    chunk->blocks[PosInChunkToIndex(treeX + -2, y + 3, treeZ + 2)] =
+        BLOCK_LEAVES;
 
-    chunk->blocks[PosToIndex(treeX + 2, y + 3, treeZ + 1)] = BLOCK_LEAVES;
-    chunk->blocks[PosToIndex(treeX + 1, y + 3, treeZ + 1)] = BLOCK_LEAVES;
-    chunk->blocks[PosToIndex(treeX + 0, y + 3, treeZ + 1)] = BLOCK_LEAVES;
-    chunk->blocks[PosToIndex(treeX + -1, y + 3, treeZ + 1)] = BLOCK_LEAVES;
-    chunk->blocks[PosToIndex(treeX + -2, y + 3, treeZ + 1)] = BLOCK_LEAVES;
+    chunk->blocks[PosInChunkToIndex(treeX + 2, y + 3, treeZ + 1)] =
+        BLOCK_LEAVES;
+    chunk->blocks[PosInChunkToIndex(treeX + 1, y + 3, treeZ + 1)] =
+        BLOCK_LEAVES;
+    chunk->blocks[PosInChunkToIndex(treeX + 0, y + 3, treeZ + 1)] =
+        BLOCK_LEAVES;
+    chunk->blocks[PosInChunkToIndex(treeX + -1, y + 3, treeZ + 1)] =
+        BLOCK_LEAVES;
+    chunk->blocks[PosInChunkToIndex(treeX + -2, y + 3, treeZ + 1)] =
+        BLOCK_LEAVES;
 
-    chunk->blocks[PosToIndex(treeX + 2, y + 3, treeZ + 0)] = BLOCK_LEAVES;
-    chunk->blocks[PosToIndex(treeX + 1, y + 3, treeZ + 0)] = BLOCK_LEAVES;
-    chunk->blocks[PosToIndex(treeX + -1, y + 3, treeZ + 0)] = BLOCK_LEAVES;
-    chunk->blocks[PosToIndex(treeX + -2, y + 3, treeZ + 0)] = BLOCK_LEAVES;
+    chunk->blocks[PosInChunkToIndex(treeX + 2, y + 3, treeZ + 0)] =
+        BLOCK_LEAVES;
+    chunk->blocks[PosInChunkToIndex(treeX + 1, y + 3, treeZ + 0)] =
+        BLOCK_LEAVES;
+    chunk->blocks[PosInChunkToIndex(treeX + -1, y + 3, treeZ + 0)] =
+        BLOCK_LEAVES;
+    chunk->blocks[PosInChunkToIndex(treeX + -2, y + 3, treeZ + 0)] =
+        BLOCK_LEAVES;
 
-    chunk->blocks[PosToIndex(treeX + 2, y + 3, treeZ - 1)] = BLOCK_LEAVES;
-    chunk->blocks[PosToIndex(treeX + 1, y + 3, treeZ - 1)] = BLOCK_LEAVES;
-    chunk->blocks[PosToIndex(treeX + 0, y + 3, treeZ - 1)] = BLOCK_LEAVES;
-    chunk->blocks[PosToIndex(treeX + -1, y + 3, treeZ - 1)] = BLOCK_LEAVES;
-    chunk->blocks[PosToIndex(treeX + -2, y + 3, treeZ - 1)] = BLOCK_LEAVES;
+    chunk->blocks[PosInChunkToIndex(treeX + 2, y + 3, treeZ - 1)] =
+        BLOCK_LEAVES;
+    chunk->blocks[PosInChunkToIndex(treeX + 1, y + 3, treeZ - 1)] =
+        BLOCK_LEAVES;
+    chunk->blocks[PosInChunkToIndex(treeX + 0, y + 3, treeZ - 1)] =
+        BLOCK_LEAVES;
+    chunk->blocks[PosInChunkToIndex(treeX + -1, y + 3, treeZ - 1)] =
+        BLOCK_LEAVES;
+    chunk->blocks[PosInChunkToIndex(treeX + -2, y + 3, treeZ - 1)] =
+        BLOCK_LEAVES;
 
-    chunk->blocks[PosToIndex(treeX + 2, y + 3, treeZ - 2)] = BLOCK_LEAVES;
-    chunk->blocks[PosToIndex(treeX + 1, y + 3, treeZ - 2)] = BLOCK_LEAVES;
-    chunk->blocks[PosToIndex(treeX + 0, y + 3, treeZ - 2)] = BLOCK_LEAVES;
-    chunk->blocks[PosToIndex(treeX + -1, y + 3, treeZ - 2)] = BLOCK_LEAVES;
-    chunk->blocks[PosToIndex(treeX + -2, y + 3, treeZ - 2)] = BLOCK_LEAVES;
+    chunk->blocks[PosInChunkToIndex(treeX + 2, y + 3, treeZ - 2)] =
+        BLOCK_LEAVES;
+    chunk->blocks[PosInChunkToIndex(treeX + 1, y + 3, treeZ - 2)] =
+        BLOCK_LEAVES;
+    chunk->blocks[PosInChunkToIndex(treeX + 0, y + 3, treeZ - 2)] =
+        BLOCK_LEAVES;
+    chunk->blocks[PosInChunkToIndex(treeX + -1, y + 3, treeZ - 2)] =
+        BLOCK_LEAVES;
+    chunk->blocks[PosInChunkToIndex(treeX + -2, y + 3, treeZ - 2)] =
+        BLOCK_LEAVES;
   }
 
   CreateOpaqueMesh(chunk);

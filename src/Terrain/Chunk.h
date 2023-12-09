@@ -32,7 +32,11 @@ struct Chunk {
 };
 
 // TODO: move to utils or something more general
-int PosToIndex(int x, int y, int z);
+int PosInChunkToIndex(int x, int y, int z);
+
+void PosToChunkPos(ivec3 pos, ivec2* chunkPos);
+
+void PosToPosInChunk(ivec3 pos, ivec3* posInChunk);
 
 void UpdateOpaqueMesh(struct Chunk* chunk);
 

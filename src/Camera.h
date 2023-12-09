@@ -8,6 +8,9 @@
 #include <cglm/vec2.h>
 #include <cglm/vec3.h>
 
+#include "Terrain/Chunk.h"
+#include "Terrain/Block.h"
+
 struct Transform {
   vec3 translation;
   vec3 rotation;

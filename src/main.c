@@ -277,9 +277,8 @@ int main(void) {
 
     glUseProgram(0);
 
+    // TODO: refactor this mess
     // TODO: raycast
-    // TODO: broken at chunk borders still
-    // figure out how to properly calculate hit pos in chunk and actual chunk
     float rayDistance = 10.f;
     float step = 0.1f;
     float currentStep = 0.f;
@@ -307,7 +306,6 @@ int main(void) {
           GetChunk(selectionChunkPos[0], selectionChunkPos[1], loadedChunks,
                    loadedChunksSize, &generationNoise);
 
-      // TODO: broken for chunk over 1
       ivec3 selectionInChunkPos = {0};
       selectionInChunkPos[1] = selectionPos[1];
 
@@ -330,7 +328,7 @@ int main(void) {
         selectionInChunkPos[2] = (selectionPos[2]) % CHUNK_LENGTH;
       }
 
-      unsigned int selectedBlock = hitChunk->blocks[PosToIndex(
+      unsigned int selectedBlock = hitChunk->blocks[PosInChunkToIndex(
           selectionInChunkPos[0], selectionInChunkPos[1],
           selectionInChunkPos[2])];
 
@@ -352,9 +350,9 @@ int main(void) {
         if (currentTimeS - lastBreakTimeS < breakCooldownS) break;
 
         // TODO: don't do this raw
-        hitChunk
-            ->blocks[PosToIndex(selectionInChunkPos[0], selectionInChunkPos[1],
-                                selectionInChunkPos[2])] = 0;
+        hitChunk->blocks[PosInChunkToIndex(selectionInChunkPos[0],
+                                           selectionInChunkPos[1],
+                                           selectionInChunkPos[2])] = 0;
 
         lastBreakTimeS = currentTimeS;
         UpdateOpaqueMesh(hitChunk);
@@ -388,15 +386,15 @@ int main(void) {
           testInChunkPos[2] = (lastStepPos[2]) % CHUNK_LENGTH;
         }
 
-        unsigned int testBlock = testChunk->blocks[PosToIndex(
+        unsigned int testBlock = testChunk->blocks[PosInChunkToIndex(
             testInChunkPos[0], testInChunkPos[1], testInChunkPos[2])];
 
         // TODO:
         if (testBlock != 0) break;
 
         // TODO: don't do this raw
-        testChunk->blocks[PosToIndex(testInChunkPos[0], testInChunkPos[1],
-                                     testInChunkPos[2])] = 1;
+        testChunk->blocks[PosInChunkToIndex(
+            testInChunkPos[0], testInChunkPos[1], testInChunkPos[2])] = 1;
 
         lastBreakTimeS = currentTimeS;
         UpdateOpaqueMesh(testChunk);
