@@ -42,7 +42,7 @@ struct Block {
   int isSelfCulled;
 };
 
-struct Vertex {
+struct BlockVertex {
   int blockId;
   vec3 position;
   vec3 normal;
@@ -51,12 +51,13 @@ struct Vertex {
 
 void AddFaceToBuffer(unsigned int blockId, enum BlockFace blockFace, int worldX,
                      int worldY, int worldZ, int* currentFaceIndex,
-                     struct Vertex* vertices, unsigned int* triangles);
+                     struct BlockVertex* vertices, unsigned int* triangles);
 
 void AddToOpaqueBuffer(unsigned int* chunkData, int x, int y, int z, int worldX,
                        int worldZ, int* currentFaceIndex,
-                       struct Vertex* vertices, unsigned int* triangles);
+                       struct BlockVertex* vertices, unsigned int* triangles);
 
 void AddToTranslucentBuffer(unsigned int* chunkData, int x, int y, int z,
                             int worldX, int worldZ, int* currentFaceIndex,
-                            struct Vertex* vertices, unsigned int* triangles);
+                            struct BlockVertex* vertices,
+                            unsigned int* triangles);

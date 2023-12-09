@@ -47,28 +47,30 @@ void CreateOpaqueMesh(struct Chunk* chunk) {
   CALL_GL(glGenBuffers(1, &(chunk->opaqueMesh.ebo)));
   CALL_GL(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, chunk->opaqueMesh.ebo));
 
-  int stride = sizeof(struct Vertex);
+  int stride = sizeof(struct BlockVertex);
 
   CALL_GL(glEnableVertexAttribArray(0));
   CALL_GL(glVertexAttribIPointer(0, 1, GL_INT, stride,
-                                 (void*)offsetof(struct Vertex, blockId)));
+                                 (void*)offsetof(struct BlockVertex, blockId)));
 
   CALL_GL(glEnableVertexAttribArray(1));
   CALL_GL(glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, stride,
-                                (void*)offsetof(struct Vertex, position)));
+                                (void*)offsetof(struct BlockVertex, position)));
 
   CALL_GL(glEnableVertexAttribArray(2));
   CALL_GL(glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, stride,
-                                (void*)offsetof(struct Vertex, normal)));
+                                (void*)offsetof(struct BlockVertex, normal)));
 
   CALL_GL(glEnableVertexAttribArray(3));
-  CALL_GL(glVertexAttribPointer(3, 2, GL_FLOAT, GL_FALSE, stride,
-                                (void*)offsetof(struct Vertex, texCoords)));
+  CALL_GL(
+      glVertexAttribPointer(3, 2, GL_FLOAT, GL_FALSE, stride,
+                            (void*)offsetof(struct BlockVertex, texCoords)));
 
   // TODO: allocate in a less wasteful way?
   const int maxFacesInChunk = ((int)CHUNK_VOLUME * 6);
 
-  struct Vertex* vertices = calloc(maxFacesInChunk * 4, sizeof(struct Vertex));
+  struct BlockVertex* vertices =
+      calloc(maxFacesInChunk * 4, sizeof(struct BlockVertex));
   unsigned int* triangles = calloc(maxFacesInChunk * 6, sizeof(unsigned int));
 
   int currentFaceIndex = 0;
@@ -86,8 +88,8 @@ void CreateOpaqueMesh(struct Chunk* chunk) {
   // ignoring the rest of data that is garbage, allocated for the worst case
   // when culling faces
   CALL_GL(glBufferData(GL_ARRAY_BUFFER,
-                       sizeof(struct Vertex) * 4 * currentFaceIndex, vertices,
-                       GL_STATIC_DRAW));
+                       sizeof(struct BlockVertex) * 4 * currentFaceIndex,
+                       vertices, GL_STATIC_DRAW));
   CALL_GL(glBufferData(GL_ELEMENT_ARRAY_BUFFER,
                        sizeof(unsigned int) * 6 * currentFaceIndex, triangles,
                        GL_STATIC_DRAW));
@@ -111,28 +113,30 @@ void CreateTranslucentMesh(struct Chunk* chunk) {
   CALL_GL(glGenBuffers(1, &(chunk->translucentMesh.ebo)));
   CALL_GL(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, chunk->translucentMesh.ebo));
 
-  int stride = sizeof(struct Vertex);
+  int stride = sizeof(struct BlockVertex);
 
   CALL_GL(glEnableVertexAttribArray(0));
   CALL_GL(glVertexAttribIPointer(0, 1, GL_INT, stride,
-                                 (void*)offsetof(struct Vertex, blockId)));
+                                 (void*)offsetof(struct BlockVertex, blockId)));
 
   CALL_GL(glEnableVertexAttribArray(1));
   CALL_GL(glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, stride,
-                                (void*)offsetof(struct Vertex, position)));
+                                (void*)offsetof(struct BlockVertex, position)));
 
   CALL_GL(glEnableVertexAttribArray(2));
   CALL_GL(glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, stride,
-                                (void*)offsetof(struct Vertex, normal)));
+                                (void*)offsetof(struct BlockVertex, normal)));
 
   CALL_GL(glEnableVertexAttribArray(3));
-  CALL_GL(glVertexAttribPointer(3, 2, GL_FLOAT, GL_FALSE, stride,
-                                (void*)offsetof(struct Vertex, texCoords)));
+  CALL_GL(
+      glVertexAttribPointer(3, 2, GL_FLOAT, GL_FALSE, stride,
+                            (void*)offsetof(struct BlockVertex, texCoords)));
 
   // TODO: allocate in a less wasteful way?
   const int maxFacesInChunk = ((int)CHUNK_VOLUME * 6);
 
-  struct Vertex* vertices = calloc(maxFacesInChunk * 4, sizeof(struct Vertex));
+  struct BlockVertex* vertices =
+      calloc(maxFacesInChunk * 4, sizeof(struct BlockVertex));
   unsigned int* triangles = calloc(maxFacesInChunk * 6, sizeof(unsigned int));
 
   int currentFaceIndex = 0;
@@ -151,8 +155,8 @@ void CreateTranslucentMesh(struct Chunk* chunk) {
   // ignoring the rest of data that is garbage, allocated for the worst case
   // when culling faces
   CALL_GL(glBufferData(GL_ARRAY_BUFFER,
-                       sizeof(struct Vertex) * 4 * currentFaceIndex, vertices,
-                       GL_STATIC_DRAW));
+                       sizeof(struct BlockVertex) * 4 * currentFaceIndex,
+                       vertices, GL_STATIC_DRAW));
   CALL_GL(glBufferData(GL_ELEMENT_ARRAY_BUFFER,
                        sizeof(unsigned int) * 6 * currentFaceIndex, triangles,
                        GL_STATIC_DRAW));
@@ -176,7 +180,8 @@ void UpdateOpaqueMesh(struct Chunk* chunk) {
   // TODO: allocate in a less wasteful way?
   const int maxFacesInChunk = ((int)CHUNK_VOLUME * 6);
 
-  struct Vertex* vertices = calloc(maxFacesInChunk * 4, sizeof(struct Vertex));
+  struct BlockVertex* vertices =
+      calloc(maxFacesInChunk * 4, sizeof(struct BlockVertex));
   unsigned int* triangles = calloc(maxFacesInChunk * 6, sizeof(unsigned int));
 
   int currentFaceIndex = 0;
@@ -194,8 +199,8 @@ void UpdateOpaqueMesh(struct Chunk* chunk) {
   // ignoring the rest of data that is garbage, allocated for the worst case
   // when culling faces
   CALL_GL(glBufferData(GL_ARRAY_BUFFER,
-                       sizeof(struct Vertex) * 4 * currentFaceIndex, vertices,
-                       GL_STATIC_DRAW));
+                       sizeof(struct BlockVertex) * 4 * currentFaceIndex,
+                       vertices, GL_STATIC_DRAW));
   CALL_GL(glBufferData(GL_ELEMENT_ARRAY_BUFFER,
                        sizeof(unsigned int) * 6 * currentFaceIndex, triangles,
                        GL_STATIC_DRAW));

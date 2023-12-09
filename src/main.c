@@ -20,6 +20,7 @@
 #include "Renderer/Shader.h"
 #include "Renderer/Skybox.h"
 #include "Terrain/Chunk.h"
+#include "Renderer/HeldItem.h"
 // #include "Text.h"
 
 // #define _CRTDBG_MAP_ALLOC
@@ -133,6 +134,11 @@ int main(void) {
 
   struct Skybox* skybox = CreateSkybox();
 
+  GLuint testShader = CreateShaderProgram(
+      "C:/Users/Zyxwa/Documents/code/oglc/src/shaders/heldItem.vert",
+      "C:/Users/Zyxwa/Documents/code/oglc/src/shaders/heldItem.frag");
+  struct Mesh* heldItem = CreateHeldItem();
+
   float selectionVertices[] = {
       -1.0f, -1.0f, -1.0f, -1.0f, -1.0f, 1.0f,  -1.0f, 1.0f,  1.0f,  1.0f,
       1.0f,  -1.0f, -1.0f, -1.0f, -1.0f, -1.0f, 1.0f,  -1.0f, 1.0f,  -1.0f,
@@ -196,7 +202,7 @@ int main(void) {
                deltaTimeS, camera);
 
     // Fog color
-    CALL_GL(glClearColor(1.f, 0.f, 0.f, 1.f));
+    CALL_GL(glClearColor(1.f, 0.f, 1.f, 1.f));
     CALL_GL(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
 
     DrawSkybox(skybox, camera->viewMatrix, camera->projectionMatrix);
@@ -208,22 +214,10 @@ int main(void) {
     mat4 mvp = {0};
     glm_mat4_mul(camera->projectionMatrix, camera->viewMatrix, mvp);
 
-    // mvp matrix
     CALL_GL(GLint MVPUniform =
                 glGetUniformLocation(chunkShaderProgram, "u_MVP"));
     CALL_GL(glUniformMatrix4fv(MVPUniform, 1, GL_FALSE, mvp[0]));
 
-    // inverse matrices
-    // CALL_GL(GLint ProjMatInvUniform =
-    //             glGetUniformLocation(chunkShaderProgram, "u_ProjMatInv"));
-    // CALL_GL(GLint ViewMatInvUniform =
-    //             glGetUniformLocation(chunkShaderProgram, "u_ViewMatInv"));
-
-    // CALL_GL(glUniformMatrix4fv(ProjMatInvUniform, 1, GL_FALSE,
-    // projMatInv[0])); CALL_GL(glUniformMatrix4fv(ViewMatInvUniform, 1,
-    // GL_FALSE, viewMatInv[0]));
-
-    // time
     CALL_GL(GLint timeUniform =
                 glGetUniformLocation(chunkShaderProgram, "u_TimeS"));
     CALL_GL(glUniform1f(timeUniform, currentTimeS));
@@ -264,18 +258,12 @@ int main(void) {
     CALL_GL(glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA));
 
     for (int i = 0; i < chunksToRenderIndex; i++) {
-      // struct Mesh* mesh = &(chunksToRender[i]->translucentMesh);
-
-      // AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-      // if (mesh->faceCount == 0) continue;
-
       DrawChunkMesh(&(chunksToRender[i]->translucentMesh));
     }
 
     free(chunksToRender);
     CALL_GL(glDisable(GL_BLEND));
-
-    glUseProgram(0);
+    CALL_GL(glUseProgram(0));
 
     // TODO: refactor this mess
     // TODO: raycast
@@ -394,7 +382,8 @@ int main(void) {
 
         // TODO: don't do this raw
         testChunk->blocks[PosInChunkToIndex(
-            testInChunkPos[0], testInChunkPos[1], testInChunkPos[2])] = 1;
+            testInChunkPos[0], testInChunkPos[1], testInChunkPos[2])] =
+            BLOCK_STONE;
 
         lastBreakTimeS = currentTimeS;
         UpdateOpaqueMesh(testChunk);
@@ -417,6 +406,7 @@ int main(void) {
       selectionModelMat[3][2] = (float)selectionPos[2];
       selectionModelMat[3][3] = 1;
 
+      // TODO: this doesn't work in a function?, use mul instead of mulN
       glm_mat4_mulN((mat4*[]){&(camera->projectionMatrix),
                               &(camera->viewMatrix), &selectionModelMat},
                     3, selectionMvp);
@@ -437,6 +427,24 @@ int main(void) {
       CALL_GL(glBindVertexArray(0));
       CALL_GL(glUseProgram(0));
     }
+
+    // TODO: wrap everything in a function
+    mat4 heldItemMVP = GLM_MAT4_IDENTITY_INIT;
+    vec3 heldItemTranslation = {2, -1, -3.5};
+    glm_translate(heldItemMVP, heldItemTranslation);
+    glm_mat4_mul(camera->projectionMatrix, heldItemMVP, heldItemMVP);
+
+    CALL_GL(glBindVertexArray(heldItem->vao));
+    CALL_GL(glUseProgram(testShader));
+    CALL_GL(glClear(GL_DEPTH_BUFFER_BIT));
+    CALL_GL(GLint heldItemMVPUniform =
+                glGetUniformLocation(testShader, "u_MVP"));
+    CALL_GL(
+        glUniformMatrix4fv(heldItemMVPUniform, 1, GL_FALSE, heldItemMVP[0]));
+    CALL_GL(glDrawElements(GL_TRIANGLES, heldItem->faceCount * 6,
+                           GL_UNSIGNED_INT, 0));
+    CALL_GL(glBindVertexArray(0))
+    CALL_GL(glUseProgram(0));
 
     glfwSwapBuffers(window);
 

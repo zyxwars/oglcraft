@@ -34,7 +34,7 @@ float GetTexelY(int y) { return (y / AtlasH); };
 
 void AddFaceToBuffer(unsigned int blockId, enum BlockFace blockFace, int worldX,
                      int worldY, int worldZ, int* currentFaceIndex,
-                     struct Vertex* vertices, unsigned int* triangles) {
+                     struct BlockVertex* vertices, unsigned int* triangles) {
   const struct Block* currentBlockType = &BlockTypes[blockId];
 
   float uvs[24][2] = {0};
@@ -61,13 +61,13 @@ void AddFaceToBuffer(unsigned int blockId, enum BlockFace blockFace, int worldX,
         GetTexelY(currentBlockType->texCoord[i][1] * blockSize + blockSize);
   }
 
-  const struct Vertex frontFace[] = {
+  const struct BlockVertex frontFace[] = {
       {blockId, {-0.5f, -0.5f, 0.5f}, {0.f, 0.f, 1.f}, {uvs[0][0], uvs[0][1]}},
       {blockId, {-0.5f, 0.5f, 0.5f}, {0.f, 0.f, 1.f}, {uvs[1][0], uvs[1][1]}},
       {blockId, {0.5f, 0.5f, 0.5f}, {0.f, 0.f, 1.f}, {uvs[2][0], uvs[2][1]}},
       {blockId, {0.5f, -0.5f, 0.5f}, {0.f, 0.f, 1.f}, {uvs[3][0], uvs[3][1]}},
   };
-  const struct Vertex backFace[] = {
+  const struct BlockVertex backFace[] = {
       {blockId,
        {-0.5f, -0.5f, -0.5f},
        {0.f, 0.f, -1.f},
@@ -76,13 +76,13 @@ void AddFaceToBuffer(unsigned int blockId, enum BlockFace blockFace, int worldX,
       {blockId, {0.5f, 0.5f, -0.5f}, {0.f, 0.f, -1.f}, {uvs[6][0], uvs[6][1]}},
       {blockId, {0.5f, -0.5f, -0.5f}, {0.f, 0.f, -1.f}, {uvs[7][0], uvs[7][1]}},
   };
-  const struct Vertex topFace[] = {
+  const struct BlockVertex topFace[] = {
       {blockId, {-0.5f, 0.5f, 0.5f}, {0.f, 1.f, 0.f}, {uvs[8][0], uvs[8][1]}},
       {blockId, {-0.5f, 0.5f, -0.5f}, {0.f, 1.f, 0.f}, {uvs[9][0], uvs[9][1]}},
       {blockId, {0.5f, 0.5f, -0.5f}, {0.f, 1.f, 0.f}, {uvs[10][0], uvs[10][1]}},
       {blockId, {0.5f, 0.5f, 0.5f}, {0.f, 1.f, 0.f}, {uvs[11][0], uvs[11][1]}},
   };
-  const struct Vertex bottomFace[] = {
+  const struct BlockVertex bottomFace[] = {
       {blockId,
        {-0.5f, -0.5f, 0.5f},
        {0.f, -1.f, 0.f},
@@ -100,7 +100,7 @@ void AddFaceToBuffer(unsigned int blockId, enum BlockFace blockFace, int worldX,
        {0.f, -1.f, 0.f},
        {uvs[15][0], uvs[15][1]}},
   };
-  const struct Vertex leftFace[] = {
+  const struct BlockVertex leftFace[] = {
       {blockId,
        {-0.5f, -0.5f, -0.5f},
        {1.f, 0.f, 0.f},
@@ -115,7 +115,7 @@ void AddFaceToBuffer(unsigned int blockId, enum BlockFace blockFace, int worldX,
        {1.f, 0.f, 0.f},
        {uvs[19][0], uvs[19][1]}},
   };
-  const struct Vertex rightFace[] = {
+  const struct BlockVertex rightFace[] = {
       {blockId,
        {0.5f, -0.5f, -0.5f},
        {-1.f, 0.f, 0.f},
@@ -131,12 +131,12 @@ void AddFaceToBuffer(unsigned int blockId, enum BlockFace blockFace, int worldX,
        {uvs[23][0], uvs[23][1]}},
   };
 
-  const struct Vertex* pFaceToCopy = NULL;
+  const struct BlockVertex* pFaceToCopy = NULL;
 
   int currentVertexIndex = (*currentFaceIndex) * 4;
   int currentTriangleIndex = (*currentFaceIndex) * 6;
 
-  struct Vertex* currentVertexStart = vertices + currentVertexIndex;
+  struct BlockVertex* currentVertexStart = vertices + currentVertexIndex;
 
   // TODO: create triangles more cleanly
   switch (blockFace) {
@@ -207,7 +207,7 @@ void AddFaceToBuffer(unsigned int blockId, enum BlockFace blockFace, int worldX,
     __debugbreak();
   }
   // Copy the 4 face vertices into the vertex buffer
-  memcpy(currentVertexStart, pFaceToCopy, 4 * sizeof(struct Vertex));
+  memcpy(currentVertexStart, pFaceToCopy, 4 * sizeof(struct BlockVertex));
 
   // Set face position based on cube position
   for (int i = 0; i < 4; i++) {
@@ -221,7 +221,7 @@ void AddFaceToBuffer(unsigned int blockId, enum BlockFace blockFace, int worldX,
 
 void AddToOpaqueBuffer(unsigned int* chunkData, int x, int y, int z, int worldX,
                        int worldZ, int* currentFaceIndex,
-                       struct Vertex* vertices, unsigned int* triangles) {
+                       struct BlockVertex* vertices, unsigned int* triangles) {
   int blockId = chunkData[PosInChunkToIndex(x, y, z)];
 
   // Only process opaque blocks
@@ -280,7 +280,7 @@ void AddToOpaqueBuffer(unsigned int* chunkData, int x, int y, int z, int worldX,
 
 void AddToTranslucentBuffer(unsigned int* chunkData, int x, int y, int z,
                             int worldX, int worldZ, int* currentFaceIndex,
-                            struct Vertex* vertices, unsigned int* triangles) {
+                            struct BlockVertex* vertices, unsigned int* triangles) {
   int blockId = chunkData[PosInChunkToIndex(x, y, z)];
 
   // Only process translucent blocks

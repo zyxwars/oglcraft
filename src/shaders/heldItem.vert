@@ -11,7 +11,7 @@ out vec3 out_Normal;
 out vec2 out_TexCoords;
 
 void main(){
-    vec4 pos = vec4(in_Pos, 1.0);
+    vec4 pos = in_Pos;
 
     gl_Position = u_MVP * pos;
 
