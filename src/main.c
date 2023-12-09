@@ -136,7 +136,7 @@ int main(void) {
   int loadedChunksSize = maxLoadedChunks;
   struct Chunk** loadedChunks = calloc(maxLoadedChunks, sizeof(struct Chunk*));
 
-  struct Skybox* skybox = CreateSkybox();
+  struct Skybox* skybox = CreateSkyboxRenderer();
 
   struct HeldItemRenderer* heldItemRenderer =
       CreateHeldItemRenderer(player.heldItem);
@@ -186,11 +186,10 @@ int main(void) {
     CameraMove((float)mouseX, (float)mouseY, verticalInput, horizontalInput,
                deltaTimeS, camera);
 
-    // Fog color
     CALL_GL(glClearColor(1.f, 0.f, 1.f, 1.f));
     CALL_GL(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
 
-    DrawSkybox(skybox, camera->viewMatrix, camera->projectionMatrix);
+    SkyboxRendererDraw(skybox, camera->viewMatrix, camera->projectionMatrix);
 
     CALL_GL(glUseProgram(chunkShaderProgram));
 

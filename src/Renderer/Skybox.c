@@ -1,6 +1,6 @@
 #include "Skybox.h"
 
-struct Skybox* CreateSkybox() {
+struct Skybox* CreateSkyboxRenderer() {
   float skyboxVertices[] = {
       // positions
       -1.0f, 1.0f,  -1.0f, -1.0f, -1.0f, -1.0f, 1.0f,  -1.0f, -1.0f,
@@ -42,7 +42,8 @@ struct Skybox* CreateSkybox() {
   return skybox;
 }
 
-void DrawSkybox(struct Skybox* skybox, mat4 viewMat, mat4 projectionMat) {
+void SkyboxRendererDraw(struct Skybox* skybox, mat4 viewMat,
+                        mat4 projectionMat) {
   // The skybox moves with the player
   mat4 viewMatWithoutTranslation = {0};
   viewMatWithoutTranslation[0][0] = viewMat[0][0];

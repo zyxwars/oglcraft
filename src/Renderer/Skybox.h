@@ -15,6 +15,6 @@ struct Skybox {
   GLuint shader;
 };
 
-struct Skybox* CreateSkybox();
+struct Skybox* CreateSkyboxRenderer();
 
-void DrawSkybox(struct Skybox* skybox, mat4 viewMat, mat4 projectionMat);
+void SkyboxRendererDraw(struct Skybox* skybox, mat4 viewMat, mat4 projectionMat);
