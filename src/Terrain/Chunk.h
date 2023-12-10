@@ -29,12 +29,13 @@ struct Chunk {
   unsigned int blocks[CHUNK_VOLUME];
   struct Mesh opaqueMesh;
   struct Mesh translucentMesh;
+  int isReady;
 };
 
 // TODO: move to utils or something more general
 int PosInChunkToIndex(int x, int y, int z);
 
-void PosToChunkPos(ivec3 pos, ivec2* chunkPos);
+void PosToChunkPos(float x, float z, ivec2* chunkPos);
 
 void PosToPosInChunk(ivec3 pos, ivec3* posInChunk);
 
@@ -44,10 +45,10 @@ struct Chunk* CreateChunk(struct GenerationNoise* noiseState, int x, int z);
 
 void DestroyChunk(struct Chunk** chunk);
 
-void DrawChunkMesh(struct Mesh* mesh);
+// void DrawChunkMesh(struct Mesh* mesh);
 
-struct Chunk* GetChunk(int x, int z, struct Chunk** loadedChunks,
-                       int loadedChunksSize, struct GenerationNoise* noise);
+// struct Chunk* GetChunk(int x, int z, struct Chunk** loadedChunks,
+//                        int loadedChunksSize, struct GenerationNoise* noise);
 
-void UnloadChunks(int minChunkX, int minChunkZ, int maxChunkX, int maxChunkZ,
-                  struct Chunk** loadedChunks, int loadedChunksSize);
+// void UnloadChunks(int minChunkX, int minChunkZ, int maxChunkX, int maxChunkZ,
+//                   struct Chunk** loadedChunks, int loadedChunksSize);

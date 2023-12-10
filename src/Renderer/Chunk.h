@@ -16,13 +16,6 @@
 #include "Camera.h"
 #include "Renderer/Shader.h"
 
-struct ChunkManager {
-  struct GenerationNoise noise;
-  int renderDistance;
-  int activeChunksCount;
-  struct Chunk** activeChunks;
-};
-
-struct ChunkManager* CreateChunkManager();
-
-void ChunkManagerUpdate(struct ChunkManager* manager, ivec2 playerChunkPos);
+void ChunkRendererDraw(struct Chunk** chunks, int chunkCount, ivec2 chunkPos,
+                       int renderDistance, GLuint shader, float currentTimeS,
+                       struct Camera* camera);

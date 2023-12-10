@@ -4,14 +4,15 @@ int PosInChunkToIndex(int x, int y, int z) {
   return x + z * CHUNK_LENGTH + y * CHUNK_PLANE_AREA;
 }
 
-void PosToChunkPos(ivec3 pos, ivec2* chunkPos) {
-  (*chunkPos)[0] = (int)floor((float)pos[0] / (CHUNK_LENGTH));
-  (*chunkPos)[1] = (int)floor((float)pos[2] / (CHUNK_LENGTH));
+void PosToChunkPos(float x, float z, ivec2* chunkPos) {
+  // the decimal precision was lost, when dividing int coords so use float
+  (*chunkPos)[0] = (int)floor(x / (CHUNK_LENGTH));
+  (*chunkPos)[1] = (int)floor(z / (CHUNK_LENGTH));
 }
 
 void PosToPosInChunk(ivec3 pos, ivec3* posInChunk) {
   ivec2 chunkPos = {0};
-  PosToChunkPos(pos, *chunkPos);
+  PosToChunkPos((float)pos[0], (float)pos[2], &chunkPos);
 
   // y isn't chunked
   (*posInChunk)[1] = pos[1];
@@ -471,14 +472,14 @@ struct Chunk* CreateChunk(struct GenerationNoise* noise, int chunkX,
   return chunk;
 };
 
-void DrawChunkMesh(struct Mesh* mesh) {
-  CALL_GL(glBindVertexArray(mesh->vao))
+// void DrawChunkMesh(struct Mesh* mesh) {
+//   CALL_GL(glBindVertexArray(mesh->vao))
 
-  CALL_GL(
-      glDrawElements(GL_TRIANGLES, mesh->faceCount * 6, GL_UNSIGNED_INT, 0));
+//   CALL_GL(
+//       glDrawElements(GL_TRIANGLES, mesh->faceCount * 6, GL_UNSIGNED_INT, 0));
 
-  CALL_GL(glBindVertexArray(0))
-}
+//   CALL_GL(glBindVertexArray(0))
+// }
 
 void DestroyChunk(struct Chunk** chunk) {
   CALL_GL(glDeleteBuffers(1, &(*chunk)->opaqueMesh.vbo));
@@ -489,47 +490,47 @@ void DestroyChunk(struct Chunk** chunk) {
   *chunk = NULL;
 }
 
-struct Chunk* GetChunk(int x, int z, struct Chunk** loadedChunks,
-                       int loadedChunksSize, struct GenerationNoise* noise) {
-  // Use empty index to store new chunk
-  int emptyIndex = -1;
-  for (int i = 0; i < loadedChunksSize; i++) {
-    // Skips empty chunks
-    if (loadedChunks[i] == NULL) {
-      if (emptyIndex == -1) emptyIndex = i;
-      continue;
-    }
+// struct Chunk* GetChunk(int x, int z, struct Chunk** loadedChunks,
+//                        int loadedChunksSize, struct GenerationNoise* noise) {
+//   // Use empty index to store new chunk
+//   int emptyIndex = -1;
+//   for (int i = 0; i < loadedChunksSize; i++) {
+//     // Skips empty chunks
+//     if (loadedChunks[i] == NULL) {
+//       if (emptyIndex == -1) emptyIndex = i;
+//       continue;
+//     }
 
-    // Find chunk
-    if (loadedChunks[i]->x == x && loadedChunks[i]->z == z) {
-      return loadedChunks[i];
-    }
-  }
+//     // Find chunk
+//     if (loadedChunks[i]->x == x && loadedChunks[i]->z == z) {
+//       return loadedChunks[i];
+//     }
+//   }
 
-  // Chunks weren't unloaded in time
-  if (emptyIndex == -1) {
-    return NULL;
-  }
+//   // Chunks weren't unloaded in time
+//   if (emptyIndex == -1) {
+//     return NULL;
+//   }
 
-  // Create chunk
-  struct Chunk* chunk = CreateChunk(noise, x, z);
-  printf("Chunk: (%d, %d) created\n", chunk->x, chunk->z);
-  loadedChunks[emptyIndex] = chunk;
+//   // Create chunk
+//   struct Chunk* chunk = CreateChunk(noise, x, z);
+//   printf("Chunk: (%d, %d) created\n", chunk->x, chunk->z);
+//   loadedChunks[emptyIndex] = chunk;
 
-  return chunk;
-};
+//   return chunk;
+// };
 
-void UnloadChunks(int minChunkX, int minChunkZ, int maxChunkX, int maxChunkZ,
-                  struct Chunk** loadedChunks, int loadedChunksSize) {
-  for (int i = 0; i < loadedChunksSize; i++) {
-    if (loadedChunks[i] == NULL) {
-      continue;
-    }
+// void UnloadChunks(int minChunkX, int minChunkZ, int maxChunkX, int maxChunkZ,
+//                   struct Chunk** loadedChunks, int loadedChunksSize) {
+//   for (int i = 0; i < loadedChunksSize; i++) {
+//     if (loadedChunks[i] == NULL) {
+//       continue;
+//     }
 
-    // Free chunk outside loaded area
-    if (loadedChunks[i]->x < minChunkX || loadedChunks[i]->x > maxChunkX ||
-        loadedChunks[i]->z < minChunkZ || loadedChunks[i]->z > maxChunkZ) {
-      DestroyChunk(&loadedChunks[i]);
-    }
-  }
-}
+//     // Free chunk outside loaded area
+//     if (loadedChunks[i]->x < minChunkX || loadedChunks[i]->x > maxChunkX ||
+//         loadedChunks[i]->z < minChunkZ || loadedChunks[i]->z > maxChunkZ) {
+//       DestroyChunk(&loadedChunks[i]);
+//     }
+//   }
+// }
