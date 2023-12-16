@@ -81,9 +81,9 @@ int main(void) {
   CALL_GL(glEnable(GL_DEPTH_TEST));
 
   int textureWidth, textureHeight, nrChannels;
-  unsigned char* textureData =
-      stbi_load("C:/Users/Zyxwa/Documents/code/oglc/src/assets/terrain.png",
-                &textureWidth, &textureHeight, &nrChannels, 0);
+  unsigned char* textureData = stbi_load(
+      "C:/Users/Zyxwa/Documents/_Zyxwars/code/oglc/src/assets/terrain.png",
+      &textureWidth, &textureHeight, &nrChannels, 0);
   if (textureData == NULL) {
     LOG("Texture", "Couldn't load texture from file");
   }
@@ -104,8 +104,8 @@ int main(void) {
   stbi_image_free(textureData);
 
   GLuint chunkShaderProgram = CreateShaderProgram(
-      "C:/Users/Zyxwa/Documents/code/oglc/src/shaders/shader.vert",
-      "C:/Users/Zyxwa/Documents/code/oglc/src/shaders/shader.frag");
+      "C:/Users/Zyxwa/Documents/_Zyxwars/code/oglc/src/shaders/shader.vert",
+      "C:/Users/Zyxwa/Documents/_Zyxwars/code/oglc/src/shaders/shader.frag");
 
   struct Camera* camera = CreateCamera();
 

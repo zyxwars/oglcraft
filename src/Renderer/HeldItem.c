@@ -4,8 +4,8 @@ struct HeldItemRenderer* CreateHeldItemRenderer(enum BlockId heldBlock) {
   struct HeldItemRenderer* rend = calloc(1, sizeof(struct HeldItemRenderer));
 
   rend->shader = CreateShaderProgram(
-      "C:/Users/Zyxwa/Documents/code/oglc/src/shaders/heldItem.vert",
-      "C:/Users/Zyxwa/Documents/code/oglc/src/shaders/heldItem.frag");
+      "C:/Users/Zyxwa/Documents/_Zyxwars/code/oglc/src/shaders/heldItem.vert",
+      "C:/Users/Zyxwa/Documents/_Zyxwars/code/oglc/src/shaders/heldItem.frag");
 
   // TODO: free
   CALL_GL(glGenVertexArrays(1, &(rend->mesh.vao)));

@@ -17,8 +17,8 @@ struct SelectionRenderer* CreateSelectionRenderer() {
   struct SelectionRenderer* rend = calloc(1, sizeof(struct SelectionRenderer));
 
   rend->shader = CreateShaderProgram(
-      "C:/Users/Zyxwa/Documents/code/oglc/src/shaders/selection.vert",
-      "C:/Users/Zyxwa/Documents/code/oglc/src/shaders/selection.frag");
+      "C:/Users/Zyxwa/Documents/_Zyxwars/code/oglc/src/shaders/selection.vert",
+      "C:/Users/Zyxwa/Documents/_Zyxwars/code/oglc/src/shaders/selection.frag");
 
   CALL_GL(glGenVertexArrays(1, &(rend->mesh.vao)));
   CALL_GL(glBindVertexArray(rend->mesh.vao));
