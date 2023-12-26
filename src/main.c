@@ -25,6 +25,7 @@
 #include "Renderer/HeldItem.h"
 #include "Game/Player.h"
 #include "Game/ChunkManager.h"
+#include "Game/Raycaster.h"
 // #include "Text.h"
 
 // #define _CRTDBG_MAP_ALLOC
@@ -182,142 +183,49 @@ int main(void) {
                       chunkManager->renderDistance, chunkShaderProgram,
                       currentTimeS, camera);
 
+    ivec3 hitPos;
+    ivec3 beforeHitPos;
+    int isHit = CastRay(chunkManager, camera->transform.translation,
+                        camera->transform.forward, &hitPos, &beforeHitPos);
+
+    if (isHit) {
+      SelectionRendererDraw(selectionRenderer, hitPos, camera);
+
+      if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_1) == GLFW_PRESS) {
+        if (currentTimeS - player.lastBreakTimeS > player.breakCooldownS) {
+          ivec2 chunkPos;
+          PosToChunkPos(hitPos[0], hitPos[2], &chunkPos);
+          struct Chunk* chunk = GetChunk(chunkManager, chunkPos);
+
+          ivec3 posInChunk;
+          PosToPosInChunk(hitPos, &posInChunk);
+          // TODO: don't do this raw
+          chunk->blocks[PosInChunkToIndex(posInChunk[0], posInChunk[1],
+                                          posInChunk[2])] = 0;
+
+          player.lastBreakTimeS = currentTimeS;
+          UpdateChunkMeshes(chunk);
+        }
+      } else if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_2) ==
+                 GLFW_PRESS) {
+        if (currentTimeS - player.lastBreakTimeS > player.breakCooldownS) {
+          ivec2 chunkPos;
+          PosToChunkPos(beforeHitPos[0], beforeHitPos[2], &chunkPos);
+          struct Chunk* chunk = GetChunk(chunkManager, chunkPos);
+
+          ivec3 posInChunk;
+          PosToPosInChunk(beforeHitPos, &posInChunk);
+          // TODO: don't do this raw
+          chunk->blocks[PosInChunkToIndex(posInChunk[0], posInChunk[1],
+                                          posInChunk[2])] = player.heldItem;
+
+          player.lastBreakTimeS = currentTimeS;
+          UpdateChunkMeshes(chunk);
+        }
+      }
+    }
+
     // // TODO: refactor this mess
-    // // TODO: raycast
-    // float rayDistance = 10.f;
-    // float step = 0.1f;
-    // float currentStep = 0.f;
-    // int isHit = 0;
-    // ivec3 selectionPos = {0};
-    // ivec3 lastStepPos = {0};
-    // while (currentStep < rayDistance) {
-    //   vec3 hitPos;
-    //   glm_vec3_scale(camera->transform.forward, currentStep, hitPos);
-    //   glm_vec3_add(hitPos, camera->transform.translation, hitPos);
-    //   currentStep += step;
-
-    //   selectionPos[0] = (int)round(hitPos[0]);
-    //   selectionPos[1] = (int)round(hitPos[1]);
-    //   selectionPos[2] = (int)round(hitPos[2]);
-
-    //   // TODO:
-    //   if (selectionPos[1] >= CHUNK_HEIGHT) continue;
-
-    //   ivec2 selectionChunkPos = {
-    //       (int)floor((float)selectionPos[0] / (CHUNK_LENGTH)),
-    //       (int)floor((float)selectionPos[2] / (CHUNK_LENGTH))};
-
-    //   struct Chunk* hitChunk =
-    //       GetChunk(selectionChunkPos[0], selectionChunkPos[1], loadedChunks,
-    //                loadedChunksSize, &generationNoise);
-
-    //   ivec3 selectionInChunkPos = {0};
-    //   selectionInChunkPos[1] = selectionPos[1];
-
-    //   if (selectionPos[0] < 0) {
-    //     selectionInChunkPos[0] = abs(selectionPos[0] % CHUNK_LENGTH);
-    //     if (selectionInChunkPos[0] != 0) {
-    //       selectionInChunkPos[0] = CHUNK_LENGTH - selectionInChunkPos[0];
-    //     }
-
-    //   } else {
-    //     selectionInChunkPos[0] = (selectionPos[0]) % CHUNK_LENGTH;
-    //   }
-
-    //   if (selectionPos[2] < 0) {
-    //     selectionInChunkPos[2] = abs(selectionPos[2] % CHUNK_LENGTH);
-    //     if (selectionInChunkPos[2] != 0) {
-    //       selectionInChunkPos[2] = CHUNK_LENGTH - selectionInChunkPos[2];
-    //     }
-    //   } else {
-    //     selectionInChunkPos[2] = (selectionPos[2]) % CHUNK_LENGTH;
-    //   }
-
-    //   unsigned int selectedBlock = hitChunk->blocks[PosInChunkToIndex(
-    //       selectionInChunkPos[0], selectionInChunkPos[1],
-    //       selectionInChunkPos[2])];
-
-    //   if (selectedBlock == 0) {
-    //     lastStepPos[0] = selectionPos[0];
-    //     lastStepPos[1] = selectionPos[1];
-    //     lastStepPos[2] = selectionPos[2];
-    //     continue;
-    //   }
-
-    //   isHit = 1;
-
-    //   printf("%d %d %d %d %d [%d %d %d]\n", selectionPos[0], selectionPos[1],
-    //          selectionPos[2], selectionChunkPos[0], selectionChunkPos[1],
-    //          selectionInChunkPos[0], selectionInChunkPos[1],
-    //          selectionInChunkPos[2]);
-
-    //   if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_1) == GLFW_PRESS) {
-    //     if (currentTimeS - player.lastBreakTimeS < player.breakCooldownS)
-    //     break;
-
-    //     // TODO: don't do this raw
-    //     hitChunk->blocks[PosInChunkToIndex(selectionInChunkPos[0],
-    //                                        selectionInChunkPos[1],
-    //                                        selectionInChunkPos[2])] = 0;
-
-    //     player.lastBreakTimeS = currentTimeS;
-    //     UpdateOpaqueMesh(hitChunk);
-
-    //     break;
-    //   }
-
-    //   if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_2) == GLFW_PRESS) {
-    //     if (currentTimeS - player.lastBreakTimeS < player.breakCooldownS)
-    //     break;
-
-    //     ivec2 testChunkPos = {
-    //         (int)floor((float)lastStepPos[0] / (CHUNK_LENGTH)),
-    //         (int)floor((float)lastStepPos[2] / (CHUNK_LENGTH))};
-
-    //     struct Chunk* testChunk =
-    //         GetChunk(testChunkPos[0], testChunkPos[1], loadedChunks,
-    //                  loadedChunksSize, &generationNoise);
-
-    //     ivec3 testInChunkPos = {0};
-    //     testInChunkPos[1] = lastStepPos[1];
-
-    //     if (lastStepPos[0] < 0) {
-    //       testInChunkPos[0] = CHUNK_LENGTH + ((lastStepPos[0]) %
-    //       CHUNK_LENGTH);
-    //     } else {
-    //       testInChunkPos[0] = (lastStepPos[0]) % CHUNK_LENGTH;
-    //     }
-
-    //     if (lastStepPos[2] < 0) {
-    //       testInChunkPos[2] = CHUNK_LENGTH + ((lastStepPos[2]) %
-    //       CHUNK_LENGTH);
-    //     } else {
-    //       testInChunkPos[2] = (lastStepPos[2]) % CHUNK_LENGTH;
-    //     }
-
-    //     unsigned int testBlock = testChunk->blocks[PosInChunkToIndex(
-    //         testInChunkPos[0], testInChunkPos[1], testInChunkPos[2])];
-
-    //     // TODO:
-    //     if (testBlock != 0) break;
-
-    //     // TODO: don't do this raw
-    //     testChunk->blocks[PosInChunkToIndex(
-    //         testInChunkPos[0], testInChunkPos[1], testInChunkPos[2])] =
-    //         player.heldItem;
-
-    //     player.lastBreakTimeS = currentTimeS;
-    //     UpdateOpaqueMesh(testChunk);
-
-    //     break;
-    //   }
-
-    //   break;
-    // }
-
-    // if (isHit) {
-    //   SelectionRendererDraw(selectionRenderer, selectionPos, camera);
-    // }
 
     HeldItemRendererDraw(heldItemRenderer, camera);
 

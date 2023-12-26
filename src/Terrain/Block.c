@@ -280,7 +280,8 @@ void AddToOpaqueBuffer(unsigned int* chunkData, int x, int y, int z, int worldX,
 
 void AddToTranslucentBuffer(unsigned int* chunkData, int x, int y, int z,
                             int worldX, int worldZ, int* currentFaceIndex,
-                            struct BlockVertex* vertices, unsigned int* triangles) {
+                            struct BlockVertex* vertices,
+                            unsigned int* triangles) {
   int blockId = chunkData[PosInChunkToIndex(x, y, z)];
 
   // Only process translucent blocks
@@ -312,7 +313,8 @@ void AddToTranslucentBuffer(unsigned int* chunkData, int x, int y, int z,
 
   // Add only faces touching cutouts
   // Air is a cutout for now as well
-  if (topN == NULL || topN->isCutout)
+  // Render top water event if above block is opaque as the water can be seen
+  if (topN == NULL || topN->isCutout || topN->isOpaque)
     AddFaceToBuffer(blockId, BLOCK_FACE_TOP, worldX, y, worldZ,
                     currentFaceIndex, vertices, triangles);
 

@@ -36,13 +36,16 @@ void ChunkManagerUpdate(struct ChunkManager* manager, ivec2 playerChunkPos) {
         }
 
         if (manager->activeChunks[i]->x == currChunkPos[0] &&
-            manager->activeChunks[i]->z == currChunkPos[1])
+            manager->activeChunks[i]->z == currChunkPos[1]) {
           isLoaded = 1;
+          break;
+        }
       }
 
       if (isLoaded) continue;
 
       if (freeIndex == -1) {
+        // free chunks
         int minX = playerChunkPos[0] - manager->renderDistance;
         int minZ = playerChunkPos[1] - manager->renderDistance;
         int maxX = playerChunkPos[0] + manager->renderDistance;
@@ -59,6 +62,7 @@ void ChunkManagerUpdate(struct ChunkManager* manager, ivec2 playerChunkPos) {
         }
       }
 
+      // create new chunk
       struct Chunk* newChunk =
           CreateChunk(&(manager->noise), currChunkPos[0], currChunkPos[1]);
 
@@ -69,4 +73,17 @@ void ChunkManagerUpdate(struct ChunkManager* manager, ivec2 playerChunkPos) {
       return;
     }
   }
+}
+
+struct Chunk* GetChunk(struct ChunkManager* manager, ivec2 chunkPos) {
+  for (int i = 0; i < manager->activeChunksCount; i++) {
+    if (manager->activeChunks[i] == NULL) continue;
+
+    if (manager->activeChunks[i]->x == chunkPos[0] &&
+        manager->activeChunks[i]->z == chunkPos[1]) {
+      return manager->activeChunks[i];
+    }
+  }
+
+  return NULL;
 }

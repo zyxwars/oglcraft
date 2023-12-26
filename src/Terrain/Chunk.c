@@ -37,7 +37,6 @@ void PosToPosInChunk(ivec3 pos, ivec3* posInChunk) {
   }
 }
 
-// TODO: create update function
 void CreateOpaqueMesh(struct Chunk* chunk) {
   CALL_GL(glGenVertexArrays(1, &(chunk->opaqueMesh.vao)));
   CALL_GL(glBindVertexArray(chunk->opaqueMesh.vao));
@@ -171,7 +170,7 @@ void CreateTranslucentMesh(struct Chunk* chunk) {
   chunk->translucentMesh.faceCount = currentFaceIndex;
 }
 
-void UpdateOpaqueMesh(struct Chunk* chunk) {
+void UpdateChunkMeshes(struct Chunk* chunk) {
   CALL_GL(glBindVertexArray(chunk->opaqueMesh.vao));
   CALL_GL(glBindBuffer(GL_ARRAY_BUFFER, chunk->opaqueMesh.vbo));
   CALL_GL(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, chunk->opaqueMesh.ebo));
@@ -203,6 +202,36 @@ void UpdateOpaqueMesh(struct Chunk* chunk) {
   CALL_GL(glBufferData(GL_ELEMENT_ARRAY_BUFFER,
                        sizeof(unsigned int) * 6 * currentFaceIndex, triangles,
                        GL_STATIC_DRAW));
+
+  CALL_GL(glBindVertexArray(0));
+
+  chunk->opaqueMesh.faceCount = currentFaceIndex;
+
+  CALL_GL(glBindVertexArray(chunk->translucentMesh.vao));
+  CALL_GL(glBindBuffer(GL_ARRAY_BUFFER, chunk->translucentMesh.vbo));
+  CALL_GL(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, chunk->translucentMesh.ebo));
+
+  currentFaceIndex = 0;
+  for (int x = 0; x < CHUNK_LENGTH; x++) {
+    for (int y = 0; y < CHUNK_HEIGHT; y++) {
+      for (int z = 0; z < CHUNK_LENGTH; z++) {
+        AddToTranslucentBuffer(chunk->blocks, x, y, z,
+                               x + chunk->x * CHUNK_LENGTH,
+                               z + chunk->z * CHUNK_LENGTH, &currentFaceIndex,
+                               vertices, triangles);
+      }
+    }
+  }
+
+  // We copy only the existing vertices based on face index
+  // ignoring the rest of data that is garbage, allocated for the worst case
+  // when culling faces
+  CALL_GL(glBufferData(GL_ARRAY_BUFFER,
+                       sizeof(struct BlockVertex) * 4 * currentFaceIndex,
+                       vertices, GL_STATIC_DRAW));
+  CALL_GL(glBufferData(GL_ELEMENT_ARRAY_BUFFER,
+                       sizeof(unsigned int) * 6 * currentFaceIndex, triangles,
+                       GL_STATIC_DRAW));
   free(vertices);
   free(triangles);
   vertices = NULL;
@@ -210,7 +239,7 @@ void UpdateOpaqueMesh(struct Chunk* chunk) {
 
   CALL_GL(glBindVertexArray(0));
 
-  chunk->opaqueMesh.faceCount = currentFaceIndex;
+  chunk->translucentMesh.faceCount = currentFaceIndex;
 }
 
 float SamplePerlinNoise(fnl_state* noiseState, float x, float z, int octaves,
@@ -472,15 +501,6 @@ struct Chunk* CreateChunk(struct GenerationNoise* noise, int chunkX,
   return chunk;
 };
 
-// void DrawChunkMesh(struct Mesh* mesh) {
-//   CALL_GL(glBindVertexArray(mesh->vao))
-
-//   CALL_GL(
-//       glDrawElements(GL_TRIANGLES, mesh->faceCount * 6, GL_UNSIGNED_INT, 0));
-
-//   CALL_GL(glBindVertexArray(0))
-// }
-
 void DestroyChunk(struct Chunk** chunk) {
   CALL_GL(glDeleteBuffers(1, &(*chunk)->opaqueMesh.vbo));
   CALL_GL(glDeleteBuffers(1, &(*chunk)->opaqueMesh.ebo));
@@ -489,48 +509,3 @@ void DestroyChunk(struct Chunk** chunk) {
   free(*chunk);
   *chunk = NULL;
 }
-
-// struct Chunk* GetChunk(int x, int z, struct Chunk** loadedChunks,
-//                        int loadedChunksSize, struct GenerationNoise* noise) {
-//   // Use empty index to store new chunk
-//   int emptyIndex = -1;
-//   for (int i = 0; i < loadedChunksSize; i++) {
-//     // Skips empty chunks
-//     if (loadedChunks[i] == NULL) {
-//       if (emptyIndex == -1) emptyIndex = i;
-//       continue;
-//     }
-
-//     // Find chunk
-//     if (loadedChunks[i]->x == x && loadedChunks[i]->z == z) {
-//       return loadedChunks[i];
-//     }
-//   }
-
-//   // Chunks weren't unloaded in time
-//   if (emptyIndex == -1) {
-//     return NULL;
-//   }
-
-//   // Create chunk
-//   struct Chunk* chunk = CreateChunk(noise, x, z);
-//   printf("Chunk: (%d, %d) created\n", chunk->x, chunk->z);
-//   loadedChunks[emptyIndex] = chunk;
-
-//   return chunk;
-// };
-
-// void UnloadChunks(int minChunkX, int minChunkZ, int maxChunkX, int maxChunkZ,
-//                   struct Chunk** loadedChunks, int loadedChunksSize) {
-//   for (int i = 0; i < loadedChunksSize; i++) {
-//     if (loadedChunks[i] == NULL) {
-//       continue;
-//     }
-
-//     // Free chunk outside loaded area
-//     if (loadedChunks[i]->x < minChunkX || loadedChunks[i]->x > maxChunkX ||
-//         loadedChunks[i]->z < minChunkZ || loadedChunks[i]->z > maxChunkZ) {
-//       DestroyChunk(&loadedChunks[i]);
-//     }
-//   }
-// }

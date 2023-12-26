@@ -39,16 +39,8 @@ void PosToChunkPos(float x, float z, ivec2* chunkPos);
 
 void PosToPosInChunk(ivec3 pos, ivec3* posInChunk);
 
-void UpdateOpaqueMesh(struct Chunk* chunk);
+void UpdateChunkMeshes(struct Chunk* chunk);
 
 struct Chunk* CreateChunk(struct GenerationNoise* noiseState, int x, int z);
 
 void DestroyChunk(struct Chunk** chunk);
-
-// void DrawChunkMesh(struct Mesh* mesh);
-
-// struct Chunk* GetChunk(int x, int z, struct Chunk** loadedChunks,
-//                        int loadedChunksSize, struct GenerationNoise* noise);
-
-// void UnloadChunks(int minChunkX, int minChunkZ, int maxChunkX, int maxChunkZ,
-//                   struct Chunk** loadedChunks, int loadedChunksSize);

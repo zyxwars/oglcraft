@@ -26,3 +26,6 @@ struct ChunkManager {
 struct ChunkManager* CreateChunkManager();
 
 void ChunkManagerUpdate(struct ChunkManager* manager, ivec2 playerChunkPos);
+
+// Returns null if chunks isn't loaded
+struct Chunk* GetChunk(struct ChunkManager* manager, ivec2 chunkPos);

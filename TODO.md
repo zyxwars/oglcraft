@@ -1,4 +1,3 @@
-- take a step back and refactor
 - separate rendering from generation logic
 
 - crosshair
