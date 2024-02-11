@@ -225,8 +225,6 @@ int main(void) {
       }
     }
 
-    // // TODO: refactor this mess
-
     HeldItemRendererDraw(heldItemRenderer, camera);
 
     glfwSwapBuffers(window);

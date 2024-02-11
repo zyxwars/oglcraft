@@ -9,13 +9,50 @@ void DrawChunkMesh(struct Mesh* mesh) {
   CALL_GL(glBindVertexArray(0))
 }
 
-void ChunkRendererDraw(struct Chunk** chunks, int chunkCount, ivec2 chunkPos,
-                       int renderDistance, GLuint shader, float currentTimeS,
-                       struct Camera* camera) {
-  int minX = chunkPos[0] - renderDistance;
-  int minZ = chunkPos[1] - renderDistance;
-  int maxX = chunkPos[0] + renderDistance;
-  int maxZ = chunkPos[1] + renderDistance;
+static ivec2 compareContextPlayerChunkPos;
+int compareChunkDistance(const void* a, const void* b) {
+  const struct Chunk* chunkA = *(struct Chunk**)a;
+  const struct Chunk* chunkB = *(struct Chunk**)b;
+
+  if (chunkA == NULL && chunkB == NULL) {
+    return 0;
+  }
+
+  if (chunkA == NULL) {
+    return 1;
+  }
+  if (chunkB == NULL) {
+    return -1;
+  }
+
+  int aDistance = pow(chunkA->x - compareContextPlayerChunkPos[0], 2) +
+                  pow(chunkA->z - compareContextPlayerChunkPos[1], 2);
+  int bDistance = pow(chunkB->x - compareContextPlayerChunkPos[0], 2) +
+                  pow(chunkB->z - compareContextPlayerChunkPos[1], 2);
+
+  if (aDistance > bDistance) {
+    return 1;
+  }
+
+  if (aDistance < bDistance) {
+    return -1;
+  }
+
+  return 0;
+}
+
+void ChunkRendererDraw(struct Chunk** chunks, int chunkCount,
+                       ivec2 playerChunkPos, int renderDistance, GLuint shader,
+                       float currentTimeS, struct Camera* camera) {
+  // TODO: sort chunks
+  compareContextPlayerChunkPos[0] = playerChunkPos[0];
+  compareContextPlayerChunkPos[1] = playerChunkPos[1];
+  qsort(chunks, chunkCount, sizeof(struct Chunk*), compareChunkDistance);
+
+  int minX = playerChunkPos[0] - renderDistance;
+  int minZ = playerChunkPos[1] - renderDistance;
+  int maxX = playerChunkPos[0] + renderDistance;
+  int maxZ = playerChunkPos[1] + renderDistance;
 
   // model matrix is not used since chunks are static
   // use the same mvp for all chunks
