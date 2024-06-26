@@ -23,9 +23,12 @@ struct Skybox* CreateSkyboxRenderer() {
 
   struct Skybox* skybox = calloc(1, sizeof(struct Skybox));
 
-  skybox->shader = CreateShaderProgram(
-      "C:/Users/Zyxwa/Documents/_Zyxwars/code/oglc/src/shaders/skybox.vert",
-      "C:/Users/Zyxwa/Documents/_Zyxwars/code/oglc/src/shaders/skybox.frag");
+  // TODO:
+  char DEBUG_PATH[512] = {0};
+  char DEBUG_PATH2[512] = {0};
+  _fullpath(DEBUG_PATH, "../../../src/shaders/skybox.vert", 512);
+  _fullpath(DEBUG_PATH2, "../../../src/shaders/skybox.frag", 512);
+  skybox->shader = CreateShaderProgram(DEBUG_PATH, DEBUG_PATH2);
 
   CALL_GL(glGenVertexArrays(1, &(skybox->mesh.vao)));
   CALL_GL(glBindVertexArray(skybox->mesh.vao));

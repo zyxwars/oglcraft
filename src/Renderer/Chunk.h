@@ -8,6 +8,7 @@
 #include <cglm/mat4.h>
 #include <cglm/vec3.h>
 #include <cglm/vec2.h>
+#include <cglm/ivec2.h>
 #include <FastNoiseLite.h>
 
 #include "Renderer/GlWrapper.h"
@@ -16,6 +17,7 @@
 #include "Camera.h"
 #include "Renderer/Shader.h"
 
-void ChunkRendererDraw(struct Chunk** chunks, int chunkCount, ivec2 chunkPos,
+void ChunkRendererDraw(struct Chunk** chunks, int chunkCount,
+                       ivec2 playerChunkPos, ivec2 lastPlayerChunkPos,
                        int renderDistance, GLuint shader, float currentTimeS,
                        struct Camera* camera);

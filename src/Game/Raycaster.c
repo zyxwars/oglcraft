@@ -18,6 +18,12 @@ int CastRay(struct ChunkManager* chunkManager, vec3 startPos, vec3 dir,
         (int)round(hitPos[2]),
     };
 
+    if (hitPosRounded[1] >= CHUNK_HEIGHT) {
+      glm_ivec3_zero(*outHitPos);
+      glm_ivec3_zero(*outBeforeHitPos);
+      return 0;
+    }
+
     ivec2 chunkPos;
     PosToChunkPos(hitPosRounded[0], hitPosRounded[2], &chunkPos);
 

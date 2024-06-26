@@ -1,3 +1,5 @@
+- fix path resolution
+
 - sort chunks for transparency
 
 - separate rendering from generation logic

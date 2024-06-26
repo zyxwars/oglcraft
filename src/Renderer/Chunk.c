@@ -42,11 +42,13 @@ int compareChunkDistance(const void* a, const void* b) {
 }
 
 void ChunkRendererDraw(struct Chunk** chunks, int chunkCount,
-                       ivec2 playerChunkPos, int renderDistance, GLuint shader,
-                       float currentTimeS, struct Camera* camera) {
+                       ivec2 playerChunkPos, ivec2 lastPlayerChunkPos,
+                       int renderDistance, GLuint shader, float currentTimeS,
+                       struct Camera* camera) {
   // TODO: sort chunks
-  compareContextPlayerChunkPos[0] = playerChunkPos[0];
-  compareContextPlayerChunkPos[1] = playerChunkPos[1];
+  glm_ivec2_copy(playerChunkPos, compareContextPlayerChunkPos);
+
+  // TODO: sort on new loaded and player pos change
   qsort(chunks, chunkCount, sizeof(struct Chunk*), compareChunkDistance);
 
   int minX = playerChunkPos[0] - renderDistance;

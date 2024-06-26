@@ -3,9 +3,12 @@
 struct HeldItemRenderer* CreateHeldItemRenderer(enum BlockId heldBlock) {
   struct HeldItemRenderer* rend = calloc(1, sizeof(struct HeldItemRenderer));
 
-  rend->shader = CreateShaderProgram(
-      "C:/Users/Zyxwa/Documents/_Zyxwars/code/oglc/src/shaders/heldItem.vert",
-      "C:/Users/Zyxwa/Documents/_Zyxwars/code/oglc/src/shaders/heldItem.frag");
+  // TODO:
+  char DEBUG_PATH[512] = {0};
+  char DEBUG_PATH2[512] = {0};
+  _fullpath(DEBUG_PATH, "../../../src/shaders/heldItem.vert", 512);
+  _fullpath(DEBUG_PATH2, "../../../src/shaders/heldItem.frag", 512);
+  rend->shader = CreateShaderProgram(DEBUG_PATH, DEBUG_PATH2);
 
   // TODO: free
   CALL_GL(glGenVertexArrays(1, &(rend->mesh.vao)));

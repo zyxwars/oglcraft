@@ -16,16 +16,16 @@
 #include <FastNoiseLite.h>
 
 #include "Camera.h"
+#include "Game/ChunkManager.h"
+#include "Game/Player.h"
+#include "Game/Raycaster.h"
+#include "Renderer/Chunk.h"
 #include "Renderer/GlWrapper.h"
+#include "Renderer/HeldItem.h"
+#include "Renderer/Selection.h"
 #include "Renderer/Shader.h"
 #include "Renderer/Skybox.h"
-#include "Renderer/Selection.h"
-#include "Renderer/Chunk.h"
 #include "Terrain/Chunk.h"
-#include "Renderer/HeldItem.h"
-#include "Game/Player.h"
-#include "Game/ChunkManager.h"
-#include "Game/Raycaster.h"
 // #include "Text.h"
 
 // #define _CRTDBG_MAP_ALLOC
@@ -41,6 +41,10 @@ void GLAPIENTRY MessageCallback(GLenum source, GLenum type, GLuint id,
 }
 
 int main(void) {
+  // TODO: testing file path resolution
+  char DEBUG_PATH[512] = {0};
+  char DEBUG_PATH2[512] = {0};
+
   struct Player player = PLAYER_INIT;
 
   // Init glfw
@@ -81,10 +85,10 @@ int main(void) {
   CALL_GL(glEnable(GL_CULL_FACE));
   CALL_GL(glEnable(GL_DEPTH_TEST));
 
+  _fullpath(DEBUG_PATH, "../../../src/assets/terrain.png", 512);
   int textureWidth, textureHeight, nrChannels;
-  unsigned char* textureData = stbi_load(
-      "C:/Users/Zyxwa/Documents/_Zyxwars/code/oglc/src/assets/terrain.png",
-      &textureWidth, &textureHeight, &nrChannels, 0);
+  unsigned char* textureData =
+      stbi_load(DEBUG_PATH, &textureWidth, &textureHeight, &nrChannels, 0);
   if (textureData == NULL) {
     LOG("Texture", "Couldn't load texture from file");
   }
@@ -104,9 +108,9 @@ int main(void) {
 
   stbi_image_free(textureData);
 
-  GLuint chunkShaderProgram = CreateShaderProgram(
-      "C:/Users/Zyxwa/Documents/_Zyxwars/code/oglc/src/shaders/shader.vert",
-      "C:/Users/Zyxwa/Documents/_Zyxwars/code/oglc/src/shaders/shader.frag");
+  _fullpath(DEBUG_PATH, "../../../src/shaders/shader.vert", 512);
+  _fullpath(DEBUG_PATH2, "../../../src/shaders/shader.frag", 512);
+  GLuint chunkShaderProgram = CreateShaderProgram(DEBUG_PATH, DEBUG_PATH2);
 
   struct Camera* camera = CreateCamera();
 
@@ -123,6 +127,8 @@ int main(void) {
 
   struct SelectionRenderer* selectionRenderer = CreateSelectionRenderer();
 
+  ivec2 playerChunkPos;
+  ivec2 lastPlayerChunkPos;
   // Render loop
   while (!glfwWindowShouldClose(window)) {
     float currentTimeS = (float)glfwGetTime();
@@ -171,7 +177,7 @@ int main(void) {
 
     SkyboxRendererDraw(skybox, camera->viewMatrix, camera->projectionMatrix);
 
-    ivec2 playerChunkPos;
+    glm_ivec2_copy(playerChunkPos, lastPlayerChunkPos);
     PosToChunkPos(camera->transform.translation[0],
                   camera->transform.translation[2], &playerChunkPos);
 
@@ -180,8 +186,8 @@ int main(void) {
     // TODO:
     ChunkRendererDraw(chunkManager->activeChunks,
                       chunkManager->activeChunksCount, playerChunkPos,
-                      chunkManager->renderDistance, chunkShaderProgram,
-                      currentTimeS, camera);
+                      lastPlayerChunkPos, chunkManager->renderDistance,
+                      chunkShaderProgram, currentTimeS, camera);
 
     ivec3 hitPos;
     ivec3 beforeHitPos;

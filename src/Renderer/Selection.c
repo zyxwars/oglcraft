@@ -16,9 +16,12 @@ struct SelectionRenderer* CreateSelectionRenderer() {
 
   struct SelectionRenderer* rend = calloc(1, sizeof(struct SelectionRenderer));
 
-  rend->shader = CreateShaderProgram(
-      "C:/Users/Zyxwa/Documents/_Zyxwars/code/oglc/src/shaders/selection.vert",
-      "C:/Users/Zyxwa/Documents/_Zyxwars/code/oglc/src/shaders/selection.frag");
+  // TODO:
+  char DEBUG_PATH[512] = {0};
+  char DEBUG_PATH2[512] = {0};
+  _fullpath(DEBUG_PATH, "../../../src/shaders/selection.vert", 512);
+  _fullpath(DEBUG_PATH2, "../../../src/shaders/selection.frag", 512);
+  rend->shader = CreateShaderProgram(DEBUG_PATH, DEBUG_PATH2);
 
   CALL_GL(glGenVertexArrays(1, &(rend->mesh.vao)));
   CALL_GL(glBindVertexArray(rend->mesh.vao));
